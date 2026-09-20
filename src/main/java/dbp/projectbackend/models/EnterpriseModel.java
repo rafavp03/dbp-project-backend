@@ -5,21 +5,27 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
-@RequiredArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @Setter
 @Entity
 @Table(name = "empresas")
 public class Enterprise {
+
+    public Enterprise(String ruc, String razonSocial) {
+        this.ruc = ruc;
+        this.razonSocial = razonSocial;
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable=false, unique = true)
-    private final String ruc;
+    private String ruc;
 
     @Column(name="razon_social", nullable=false, unique=true)
-    private final String razonSocial;
+    private String razonSocial;
 
     @Column(name = "fecha_registro", nullable=false, updatable=false)
     private LocalDateTime fechaRegistro;
