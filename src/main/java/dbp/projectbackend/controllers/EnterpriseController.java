@@ -1,7 +1,7 @@
 package dbp.projectbackend.controllers;
 
 import dbp.projectbackend.dtos.EnterpriseDTO;
-import dbp.projectbackend.models.Enterprise;
+import dbp.projectbackend.models.EnterpriseModel;
 import dbp.projectbackend.services.EnterpriseService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,8 +17,8 @@ public class EnterpriseController {
     private final EnterpriseService service;
 
     @PostMapping
-    public ResponseEntity<Enterprise> createEnterprise(@Valid @RequestBody EnterpriseDTO dto) {
-        Enterprise newEnterprise = service.createEnterprise(dto);
+    public ResponseEntity<EnterpriseModel> createEnterprise(@Valid @RequestBody EnterpriseDTO dto) {
+        EnterpriseModel newEnterprise = service.createEnterprise(dto);
         return ResponseEntity
                 .created(URI.create("enterprise/"+newEnterprise.getId()))
                 .body(newEnterprise);
