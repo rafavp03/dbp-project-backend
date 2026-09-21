@@ -33,8 +33,8 @@ public class OrdenVentaModel {
     @JoinColumn(name = "cliente_id", nullable = false)
     private ClientModel cliente;
 
-    @Column(name = "fecha_venta", nullable = false, updatable = false)
-    private LocalDate fechaVenta;
+    @Column(name = "fecha_emision", nullable = false, updatable = false)
+    private LocalDate fechaEmision;
 
     @Column(nullable = false)
     private String estado;
@@ -47,11 +47,11 @@ public class OrdenVentaModel {
 
     @PrePersist
     protected void onCreate() {
-        this.fechaVenta = LocalDate.now();
+        this.fechaEmision = LocalDate.now();
     }
 
     public void addDetalle(DetalleOrdenVentaModel detalle) {
-        detalle.add(detalle);
+        detalles.add(detalle);
         detalle.setOrdenVenta(this);
     }
 
