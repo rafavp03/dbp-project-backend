@@ -18,7 +18,7 @@ public class OrdenVentaController {
 
     @PostMapping
     public ResponseEntity<OrdenVentaModel> createOrdenVenta(@RequestBody OrdenVentaDTO ordenVentaDTO) {
-        OrdenVentaModel nuevaOrden = service.createOrdenVenta(dto);
+        OrdenVentaModel nuevaOrden = ordenVentaService.createOrdenVenta(ordenVentaDTO);
         return ResponseEntity
                 .created(URI.create("/orden-venta/" + nuevaOrden.getId()))
                 .body(nuevaOrden);
@@ -26,6 +26,6 @@ public class OrdenVentaController {
 
     @GetMapping("/{id}")
     public ResponseEntity<OrdenVentaModel> getOrdenVentaById(@PathVariable Long id) {
-        return ResponseEntity.ok(service.getOrdenVentaById(id));
+        return ResponseEntity.ok(ordenVentaService.getOrdenVentaById(id));
     }
 }
