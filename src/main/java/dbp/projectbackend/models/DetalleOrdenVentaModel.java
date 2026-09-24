@@ -17,10 +17,16 @@ import java.math.BigDecimal;
 
 public class DetalleOrdenVentaModel {
 
-    public DetalleOrdenVentaModel(ProductModel producto, Integer cantidad, BigDecimal precioUnitario) {
-        this.producto = producto;
+    // precioLista y costoUnitario se copian del producto en el momento de la venta,
+    // asi los reportes no cambian si despues sube el costo o el precio.
+    public DetalleOrdenVentaModel(VarianteProductoModel variante, Integer cantidad, BigDecimal precioUnitario) {
+        this.variante = variante;
         this.cantidad = cantidad;
         this.precioUnitario = precioUnitario;
+
+        ProductModel producto = variante.getProducto();
+        this.precioLista = producto.getPrecioVenta();
+        this.costoUnitario = producto.getPrecioCompra() != null ? producto.getPrecioCompra() : BigDecimal.ZERO;
     }
 
     @Id
@@ -34,16 +40,33 @@ public class DetalleOrdenVentaModel {
     private OrdenVentaModel ordenVenta;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "producto_id", nullable = false)
-    private ProductModel producto;
+    @JoinColumn(name = "variante_id", nullable = false)
+    private VarianteProductoModel variante;
 
     @Column(nullable = false)
     private Integer cantidad;
 
-    @Column(name = "precio_unitario", nullable = false)
+    // Precio realmente cobrado (despues de rebaja / regateo)
+    @Column(name = "precio_unitario", nullable = false, precision = 12, scale = 2)
     private BigDecimal precioUnitario;
+
+    // Precio de lista al momento de la venta
+    @Column(name = "precio_lista", nullable = false, precision = 12, scale = 2)
+    private BigDecimal precioLista;
+
+    // Costo de compra al momento de la venta
+    @Column(name = "costo_unitario", nullable = false, precision = 12, scale = 2)
+    private BigDecimal costoUnitario;
 
     public BigDecimal getSubtotal() {
         return precioUnitario.multiply(BigDecimal.valueOf(cantidad));
+    }
+
+    public BigDecimal getGanancia() {
+        return precioUnitario.subtract(costoUnitario).multiply(BigDecimal.valueOf(cantidad));
+    }
+
+    public BigDecimal getDescuento() {
+        return precioLista.subtract(precioUnitario).max(BigDecimal.ZERO).multiply(BigDecimal.valueOf(cantidad));
     }
 }
