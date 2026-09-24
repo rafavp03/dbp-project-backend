@@ -3,6 +3,7 @@ package dbp.projectbackend.controllers;
 import dbp.projectbackend.dtos.OrdenVentaDTO;
 import dbp.projectbackend.models.OrdenVentaModel;
 import dbp.projectbackend.services.OrdenVentaService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +18,7 @@ public class OrdenVentaController {
     private final OrdenVentaService ordenVentaService;
 
     @PostMapping
-    public ResponseEntity<OrdenVentaModel> createOrdenVenta(@RequestBody OrdenVentaDTO ordenVentaDTO) {
+    public ResponseEntity<OrdenVentaModel> createOrdenVenta(@Valid @RequestBody OrdenVentaDTO ordenVentaDTO) {
         OrdenVentaModel nuevaOrden = ordenVentaService.createOrdenVenta(ordenVentaDTO);
         return ResponseEntity
                 .created(URI.create("/orden-venta/" + nuevaOrden.getId()))

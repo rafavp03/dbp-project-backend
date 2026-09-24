@@ -7,16 +7,15 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 public record DetalleOrdenVentaDTO (
-        @NotNull(message = "Producto Obligatorio")
-        Long productoId,
+        @NotNull(message = "Variante (talla y color) obligatoria")
+        Long varianteId,
 
         @NotNull(message = "Cantidad Obligatoria")
         @Min(value = 1, message = "Cantidad debe ser mayor a 0")
         Integer cantidad,
 
-        @NotNull(message = "Precio Unitario Obligatorio")
+        // Opcional: si no se envia, se cobra el precio de lista del producto
         @DecimalMin(value = "0.00", inclusive = false, message = "Precio Unitario debe ser mayor a 0")
         BigDecimal precioUnitario
 
 ) {}
-

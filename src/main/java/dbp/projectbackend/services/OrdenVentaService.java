@@ -3,12 +3,19 @@ package dbp.projectbackend.services;
 import dbp.projectbackend.dtos.DetalleOrdenVentaDTO;
 import dbp.projectbackend.dtos.OrdenVentaDTO;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
-import dbp.projectbackend.models.DetalleOrdenVentaModel;
-import dbp.projectbackend.models.OrdenVentaModel;
+import dbp.projectbackend.models.*;
+import dbp.projectbackend.repositories.ClientRepository;
+import dbp.projectbackend.repositories.EnterpriseRepository;
+import dbp.projectbackend.repositories.MovimientoStockRepository;
 import dbp.projectbackend.repositories.OrdenVentaRepository;
-import jakarta.transaction.Transactional;
+import dbp.projectbackend.repositories.VarianteProductoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -16,26 +23,49 @@ import org.springframework.stereotype.Service;
 public class OrdenVentaService {
 
     private final OrdenVentaRepository ordenVentaRepository;
+    private final EnterpriseRepository enterpriseRepository;
     private final ClientRepository clientRepository;
-    private final ProductRepository productRepository;
+    private final VarianteProductoRepository varianteRepository;
+    private final MovimientoStockRepository movimientoStockRepository;
 
+    // Venta minorista: se entrega en el momento, asi que nace COMPLETADA y descuenta stock.
+    // Si falta stock de alguna variante, se lanza 409 y @Transactional deshace toda la venta.
     @Transactional
     public OrdenVentaModel createOrdenVenta(OrdenVentaDTO dto){
-        ClienteModel cliente = clientRepository.findById(dto.getClienteId())
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente con id " + dto.clienteId() + " no encontrado"));
+        EnterpriseModel empresa = enterpriseRepository.findById(dto.empresaId())
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa con id " + dto.empresaId() + " no encontrada"));
 
-        OrdenVentaModel ordenVenta = new OrdenVentaModel(cliente);
+        ClientModel cliente = null;
+        if (dto.clienteId() != null) {
+            cliente = clientRepository.findById(dto.clienteId())
+                    .filter(c -> c.getEmpresa().getId().equals(empresa.getId()))
+                    .orElseThrow(() -> new ResourceNotFoundException("Cliente con id " + dto.clienteId() + " no encontrado"));
+        }
+
+        OrdenVentaModel ordenVenta = new OrdenVentaModel(empresa, cliente, dto.medioPago(), dto.canal());
+        List<MovimientoStockModel> movimientos = new ArrayList<>();
 
         for(DetalleOrdenVentaDTO detalleDto : dto.detalles()){
-            ProductoModel producto = productRepository.findById(detalleDto.productoId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Producto con id " + detalleDto.productoId() + " no encontrado"));
+            VarianteProductoModel variante = varianteRepository.findById(detalleDto.varianteId())
+                    .filter(v -> v.getProducto().getEmpresa().getId().equals(empresa.getId()))
+                    .orElseThrow(() -> new ResourceNotFoundException("Variante con id " + detalleDto.varianteId() + " no encontrada"));
 
-            DetalleOrdenVentaModel detalle = new DetalleOrdenVentaModel(producto, detalleDto.cantidad(), detalleDto.precioUnitario());
-            ordenVenta.addDetalle(detalle);
+            BigDecimal precio = detalleDto.precioUnitario() != null
+                    ? detalleDto.precioUnitario()
+                    : variante.getProducto().getPrecioVenta();
+
+            ordenVenta.addDetalle(new DetalleOrdenVentaModel(variante, detalleDto.cantidad(), precio));
+            movimientos.add(MovimientoStockModel.salida(variante, detalleDto.cantidad(), "Venta"));
         }
 
         ordenVenta.recalcularTotal();
-        return ordenVentaRepository.save(ordenVenta);
+        ordenVenta.setEstado(EstadoOrden.COMPLETADA);
+        OrdenVentaModel guardada = ordenVentaRepository.save(ordenVenta);
+
+        movimientos.forEach(m -> m.setOrdenVenta(guardada));
+        movimientoStockRepository.saveAll(movimientos);
+
+        return guardada;
     }
 
     public OrdenVentaModel getOrdenVentaById(Long id){
