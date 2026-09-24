@@ -29,7 +29,7 @@ public class OrdenVentaModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToMany(Optional = false)
+    @ManyToOne(optional = false)
     @JoinColumn(name = "cliente_id", nullable = false)
     private ClientModel cliente;
 
