@@ -17,8 +17,8 @@ import java.math.BigDecimal;
 
 public class DetalleOrdenCompraModel {
 
-    public DetalleOrdenCompraModel(ProductModel producto, Integer cantidad, BigDecimal precioUnitario) {
-        this.producto = producto;
+    public DetalleOrdenCompraModel(VarianteProductoModel variante, Integer cantidad, BigDecimal precioUnitario) {
+        this.variante = variante;
         this.cantidad = cantidad;
         this.precioUnitario = precioUnitario;
     }
@@ -34,13 +34,13 @@ public class DetalleOrdenCompraModel {
     private OrdenCompraModel ordenCompra;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "producto_id", nullable = false)
-    private ProductModel producto;
+    @JoinColumn(name = "variante_id", nullable = false)
+    private VarianteProductoModel variante;
 
     @Column(nullable = false)
     private Integer cantidad;
 
-    @Column(name = "precio_unitario", nullable = false)
+    @Column(name = "precio_unitario", nullable = false, precision = 12, scale = 2)
     private BigDecimal precioUnitario;
 
     public BigDecimal getSubtotal() {

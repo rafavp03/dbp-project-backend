@@ -8,9 +8,12 @@ import java.util.List;
 
 @Repository
 public interface MovimientoStockRepository extends JpaRepository<MovimientoStockModel, Long> {
-    // Kardex de un producto, del mas reciente al mas antiguo
-    List<MovimientoStockModel> findByProductoIdOrderByFechaDesc(Long productoId);
+    // Kardex de una variante (talla + color), del mas reciente al mas antiguo
+    List<MovimientoStockModel> findByVarianteIdOrderByFechaDesc(Long varianteId);
+
+    // Kardex de un producto (todas sus tallas y colores)
+    List<MovimientoStockModel> findByVarianteProductoIdOrderByFechaDesc(Long productoId);
 
     // Todos los movimientos de una empresa
-    List<MovimientoStockModel> findByProductoEmpresaIdOrderByFechaDesc(Long empresaId);
+    List<MovimientoStockModel> findByVarianteProductoEmpresaIdOrderByFechaDesc(Long empresaId);
 }
