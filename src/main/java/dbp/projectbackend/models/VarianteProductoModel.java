@@ -1,7 +1,8 @@
 package dbp.projectbackend.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import dbp.projectbackend.exceptions.DataIntegrityViolationException;
+import dbp.projectbackend.exceptions.InsufficientStockException;
+import dbp.projectbackend.exceptions.InvalidOperationException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -66,17 +67,17 @@ public class VarianteProductoModel {
 
     public void aumentarStock(int cantidad) {
         if (cantidad <= 0) {
-            throw new IllegalArgumentException("La cantidad debe ser mayor a 0");
+            throw new InvalidOperationException("La cantidad debe ser mayor a 0");
         }
         this.stock += cantidad;
     }
 
     public void disminuirStock(int cantidad) {
         if (cantidad <= 0) {
-            throw new IllegalArgumentException("La cantidad debe ser mayor a 0");
+            throw new InvalidOperationException("La cantidad debe ser mayor a 0");
         }
         if (this.stock < cantidad) {
-            throw new DataIntegrityViolationException(
+            throw new InsufficientStockException(
                 "Stock insuficiente para " + getNombreCompleto()
                     + " (disponible: " + stock + ", solicitado: " + cantidad + ")"
             );
@@ -87,7 +88,7 @@ public class VarianteProductoModel {
     // Ajuste por inventario fisico: fija el stock al valor contado
     public void ajustarStock(int nuevoStock) {
         if (nuevoStock < 0) {
-            throw new IllegalArgumentException("El stock no puede ser negativo");
+            throw new InvalidOperationException("El stock no puede ser negativo");
         }
         this.stock = nuevoStock;
     }

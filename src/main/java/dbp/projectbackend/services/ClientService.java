@@ -2,7 +2,7 @@ package dbp.projectbackend.services;
 
 import dbp.projectbackend.dtos.ClientDTO;
 import dbp.projectbackend.dtos.ClientResponseDTO;
-import dbp.projectbackend.exceptions.DataIntegrityViolationException;
+import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
 import dbp.projectbackend.models.ClientModel;
 import dbp.projectbackend.models.EnterpriseModel;
@@ -26,7 +26,7 @@ public class ClientService {
             .orElseThrow(() -> new ResourceNotFoundException("Empresa con id "+enterpriseId+" no encontrada."));
 
         if (clientRepository.existsByEmpresaIdAndDocumento(enterpriseId, dto.documento())) {
-            throw new DataIntegrityViolationException("Ya existe un cliente con documento "+dto.documento()+" en esta empresa.");
+            throw new DuplicateResourceException("Ya existe un cliente con documento "+dto.documento()+" en esta empresa.");
         }
 
         ClientModel newClient = new ClientModel(dto.documento(), dto.nombre(), assignedEnterprise);
@@ -57,7 +57,7 @@ public class ClientService {
         // si cambia el documento, validar que no choque con otro cliente de la misma empresa
         if (!client.getDocumento().equals(dto.documento())
                 && clientRepository.existsByEmpresaIdAndDocumento(client.getEmpresa().getId(), dto.documento())) {
-            throw new DataIntegrityViolationException("Ya existe un cliente con documento "+dto.documento()+" en esta empresa.");
+            throw new DuplicateResourceException("Ya existe un cliente con documento "+dto.documento()+" en esta empresa.");
         }
 
         client.setDocumento(dto.documento());
