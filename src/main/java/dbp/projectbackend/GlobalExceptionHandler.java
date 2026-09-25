@@ -1,80 +1,80 @@
 package dbp.projectbackend;
 
 import dbp.projectbackend.exceptions.*;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.time.Instant;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler({DuplicateResourceException.class})
-    public ProblemDetail duplicateResourceHandler(DuplicateResourceException ex){
-        ProblemDetail problemDetail = ProblemDetail.forStatus(409);
-        problemDetail.setTitle("Duplicate Resource");
-        problemDetail.setDetail(ex.getMessage());
+    private ProblemDetail build(int status, String title, String detail, HttpServletRequest request) {
+        ProblemDetail problemDetail = ProblemDetail.forStatus(status);
+        problemDetail.setTitle(title);
+        problemDetail.setDetail(detail);
+        problemDetail.setInstance(java.net.URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", Instant.now());
         return problemDetail;
+    }
+
+    @ExceptionHandler({DuplicateResourceException.class})
+    public ProblemDetail duplicateResourceHandler(DuplicateResourceException ex, HttpServletRequest request){
+        return build(409, "Duplicate Resource", ex.getMessage(), request);
     }
 
     @ExceptionHandler({InsufficientStockException.class})
-    public ProblemDetail insufficientStockHandler(InsufficientStockException ex){
-        ProblemDetail problemDetail = ProblemDetail.forStatus(409);
-        problemDetail.setTitle("Insufficient Stock");
-        problemDetail.setDetail(ex.getMessage());
-        return problemDetail;
+    public ProblemDetail insufficientStockHandler(InsufficientStockException ex, HttpServletRequest request){
+        return build(409, "Insufficient Stock", ex.getMessage(), request);
     }
 
     @ExceptionHandler({InvalidOperationException.class})
-    public ProblemDetail invalidOperationHandler(InvalidOperationException ex){
-        ProblemDetail problemDetail = ProblemDetail.forStatus(400);
-        problemDetail.setTitle("Invalid Operation");
-        problemDetail.setDetail(ex.getMessage());
-        return problemDetail;
+    public ProblemDetail invalidOperationHandler(InvalidOperationException ex, HttpServletRequest request){
+        return build(400, "Invalid Operation", ex.getMessage(), request);
     }
 
     @ExceptionHandler({UnauthorizedException.class})
-    public ProblemDetail unauthorizedHandler(UnauthorizedException ex){
-        ProblemDetail problemDetail = ProblemDetail.forStatus(403);
-        problemDetail.setTitle("Unauthorized");
-        problemDetail.setDetail(ex.getMessage());
-        return problemDetail;
+    public ProblemDetail unauthorizedHandler(UnauthorizedException ex, HttpServletRequest request){
+        return build(403, "Unauthorized", ex.getMessage(), request);
     }
 
     @ExceptionHandler({ResourceNotFoundException.class})
-    public ProblemDetail notFoundHandler(ResourceNotFoundException ex){
-        ProblemDetail problemDetail = ProblemDetail.forStatus(404);
-        problemDetail.setTitle("Resource Not Found");
-        problemDetail.setDetail(ex.getMessage());
-        return problemDetail;
+    public ProblemDetail notFoundHandler(ResourceNotFoundException ex, HttpServletRequest request){
+        return build(404, "Resource Not Found", ex.getMessage(), request);
     }
 
     @ExceptionHandler({BadCredentialsException.class})
-    public ProblemDetail badCredentialsHandler(){
-        ProblemDetail problemDetail = ProblemDetail.forStatus(401);
-        problemDetail.setTitle("Unauthorized");
-        problemDetail.setDetail("Email o contraseña incorrectos");
-        return problemDetail;
+    public ProblemDetail badCredentialsHandler(HttpServletRequest request){
+        return build(401, "Unauthorized", "Email o contraseña incorrectos", request);
     }
 
     @ExceptionHandler({AccessDeniedException.class})
-    public ProblemDetail accessDeniedHandler(){
-        ProblemDetail problemDetail = ProblemDetail.forStatus(403);
-        problemDetail.setTitle("Forbidden");
-        problemDetail.setDetail("No tienes permisos para realizar esta acción");
-        return problemDetail;
+    public ProblemDetail accessDeniedHandler(HttpServletRequest request){
+        return build(403, "Forbidden", "No tienes permisos para realizar esta acción", request);
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class})
-    public ProblemDetail validationHandler(MethodArgumentNotValidException ex){
-        ProblemDetail problemDetail = ProblemDetail.forStatus(400);
-        problemDetail.setTitle("Validation Error");
-        problemDetail.setDetail(ex.getBindingResult().getFieldErrors().stream()
+    public ProblemDetail validationHandler(MethodArgumentNotValidException ex, HttpServletRequest request){
+        String detail = ex.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .reduce((a, b) -> a + "; " + b)
-                .orElse("Datos inválidos"));
-        return problemDetail;
+                .orElse("Datos inválidos");
+        return build(400, "Validation Error", detail, request);
+    }
+
+    @ExceptionHandler({HttpMessageNotReadableException.class})
+    public ProblemDetail notReadableHandler(HttpServletRequest request){
+        return build(400, "Malformed Request Body", "El cuerpo de la petición no es un JSON válido o tiene un formato incorrecto", request);
+    }
+
+    @ExceptionHandler({Exception.class})
+    public ProblemDetail genericHandler(Exception ex, HttpServletRequest request){
+        return build(500, "Internal Server Error", "Ocurrió un error inesperado. Intenta nuevamente más tarde.", request);
     }
 }
