@@ -2,16 +2,23 @@ package dbp.projectbackend;
 
 import dbp.projectbackend.exceptions.*;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -39,9 +46,9 @@ public class GlobalExceptionHandler {
         return build(400, "Invalid Operation", ex.getMessage(), request);
     }
 
-    @ExceptionHandler({UnauthorizedException.class})
-    public ProblemDetail unauthorizedHandler(UnauthorizedException ex, HttpServletRequest request){
-        return build(403, "Unauthorized", ex.getMessage(), request);
+    @ExceptionHandler({ForbiddenException.class})
+    public ProblemDetail forbiddenHandler(ForbiddenException ex, HttpServletRequest request){
+        return build(403, "Forbidden", ex.getMessage(), request);
     }
 
     @ExceptionHandler({ResourceNotFoundException.class})
@@ -73,8 +80,41 @@ public class GlobalExceptionHandler {
         return build(400, "Malformed Request Body", "El cuerpo de la petición no es un JSON válido o tiene un formato incorrecto", request);
     }
 
+    @ExceptionHandler({DataIntegrityViolationException.class})
+    public ProblemDetail dataIntegrityHandler(DataIntegrityViolationException ex, HttpServletRequest request){
+        log.warn("Violación de integridad en {} {}: {}",
+                request.getMethod(), request.getRequestURI(), ex.getMostSpecificCause().getMessage());
+        return build(409, "Data Integrity Violation",
+                "La operación viola una restricción de unicidad o de integridad de datos.", request);
+    }
+
+    @ExceptionHandler({MethodArgumentTypeMismatchException.class})
+    public ProblemDetail typeMismatchHandler(MethodArgumentTypeMismatchException ex, HttpServletRequest request){
+        String tipo = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "el tipo esperado";
+        return build(400, "Type Mismatch",
+                "El parámetro \"" + ex.getName() + "\" debe ser de tipo " + tipo + ".", request);
+    }
+
+    @ExceptionHandler({MissingServletRequestParameterException.class})
+    public ProblemDetail missingParameterHandler(MissingServletRequestParameterException ex, HttpServletRequest request){
+        return build(400, "Missing Parameter",
+                "Falta el parámetro obligatorio \"" + ex.getParameterName() + "\".", request);
+    }
+
+    @ExceptionHandler({HttpRequestMethodNotSupportedException.class})
+    public ProblemDetail methodNotSupportedHandler(HttpRequestMethodNotSupportedException ex, HttpServletRequest request){
+        return build(405, "Method Not Allowed",
+                "El método " + ex.getMethod() + " no está soportado para esta ruta.", request);
+    }
+
+    @ExceptionHandler({NoResourceFoundException.class})
+    public ProblemDetail noResourceHandler(HttpServletRequest request){
+        return build(404, "Resource Not Found", "La ruta solicitada no existe.", request);
+    }
+
     @ExceptionHandler({Exception.class})
     public ProblemDetail genericHandler(Exception ex, HttpServletRequest request){
+        log.error("Error no controlado en {} {}", request.getMethod(), request.getRequestURI(), ex);
         return build(500, "Internal Server Error", "Ocurrió un error inesperado. Intenta nuevamente más tarde.", request);
     }
 }

@@ -3,7 +3,7 @@ package dbp.projectbackend.services;
 import dbp.projectbackend.dtos.SupplierDTO;
 import dbp.projectbackend.dtos.SupplierResponseDTO;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
-import dbp.projectbackend.exceptions.UnauthorizedException;
+import dbp.projectbackend.exceptions.ForbiddenException;
 import dbp.projectbackend.models.EnterpriseModel;
 import dbp.projectbackend.models.SupplierModel;
 import dbp.projectbackend.models.UserModel;
@@ -68,7 +68,7 @@ public class SupplierService {
                 .anyMatch(e -> e.getId().equals(currentUser.getEmpresa().getId()));
 
         if (!perteneceAEmpresa) {
-            throw new UnauthorizedException("No tienes acceso a este proveedor.");
+            throw new ForbiddenException("No tienes acceso a este proveedor.");
         }
         return supplier;
     }

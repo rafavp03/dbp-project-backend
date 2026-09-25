@@ -5,7 +5,7 @@ import dbp.projectbackend.dtos.MovimientoStockDTO;
 import dbp.projectbackend.dtos.MovimientoStockResponseDTO;
 import dbp.projectbackend.dtos.VarianteProductoResponseDTO;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
-import dbp.projectbackend.exceptions.UnauthorizedException;
+import dbp.projectbackend.exceptions.ForbiddenException;
 import dbp.projectbackend.models.MovimientoStockModel;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.models.VarianteProductoModel;
@@ -85,7 +85,7 @@ public class MovimientoStockService {
                 .orElseThrow(() -> new ResourceNotFoundException("Variante con id " + varianteId + " no encontrada."));
 
         if (!variante.getProducto().getEmpresa().getId().equals(currentUser.getEmpresa().getId())) {
-            throw new UnauthorizedException("No tienes acceso a esta variante.");
+            throw new ForbiddenException("No tienes acceso a esta variante.");
         }
         return variante;
     }

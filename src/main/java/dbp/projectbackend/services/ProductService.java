@@ -4,7 +4,7 @@ import dbp.projectbackend.dtos.ProductDTO;
 import dbp.projectbackend.dtos.ProductResponseDTO;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
-import dbp.projectbackend.exceptions.UnauthorizedException;
+import dbp.projectbackend.exceptions.ForbiddenException;
 import dbp.projectbackend.models.CategoryModel;
 import dbp.projectbackend.models.EnterpriseModel;
 import dbp.projectbackend.models.ProductModel;
@@ -98,7 +98,7 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Categoría con id " + categoriaId + " no encontrada."));
 
         if (!categoria.getEmpresa().getId().equals(empresa.getId())) {
-            throw new UnauthorizedException("La categoría no pertenece a tu empresa.");
+            throw new ForbiddenException("La categoría no pertenece a tu empresa.");
         }
         return categoria;
     }
@@ -108,7 +108,7 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Producto con id " + id + " no encontrado."));
 
         if (!product.getEmpresa().getId().equals(currentUser.getEmpresa().getId())) {
-            throw new UnauthorizedException("No tienes acceso a este producto.");
+            throw new ForbiddenException("No tienes acceso a este producto.");
         }
         return product;
     }
