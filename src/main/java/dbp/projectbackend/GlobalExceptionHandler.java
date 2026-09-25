@@ -9,6 +9,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.Instant;
 
@@ -73,8 +74,24 @@ public class GlobalExceptionHandler {
         return build(400, "Malformed Request Body", "El cuerpo de la petición no es un JSON válido o tiene un formato incorrecto", request);
     }
 
+    @ExceptionHandler({LimiteConsultasException.class})
+    public ProblemDetail limiteConsultasHandler(LimiteConsultasException ex, HttpServletRequest request){
+        return build(429, "Too Many Requests", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler({AsistenteNoDisponibleException.class})
+    public ProblemDetail asistenteNoDisponibleHandler(AsistenteNoDisponibleException ex, HttpServletRequest request){
+        return build(503, "Service Unavailable", ex.getMessage(), request);
+    }
+
+    // Parametro con formato invalido, ej. ?desde=25-09-2026 o ?por=YAPEE
+    @ExceptionHandler({MethodArgumentTypeMismatchException.class})
+    public ProblemDetail typeMismatchHandler(MethodArgumentTypeMismatchException ex, HttpServletRequest request){
+        return build(400, "Invalid Parameter", "Valor invalido para el parametro '" + ex.getName() + "': " + ex.getValue(), request);
+    }
+
     @ExceptionHandler({Exception.class})
     public ProblemDetail genericHandler(Exception ex, HttpServletRequest request){
         return build(500, "Internal Server Error", "Ocurrió un error inesperado. Intenta nuevamente más tarde.", request);
     }
-}
+}
