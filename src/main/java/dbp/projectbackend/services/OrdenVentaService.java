@@ -1,7 +1,9 @@
 package dbp.projectbackend.services;
 
 import dbp.projectbackend.dtos.DetalleOrdenVentaDTO;
+import dbp.projectbackend.dtos.DetalleOrdenVentaResponseDTO;
 import dbp.projectbackend.dtos.OrdenVentaDTO;
+import dbp.projectbackend.dtos.OrdenVentaResponseDTO;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
 import dbp.projectbackend.models.*;
 import dbp.projectbackend.repositories.ClientRepository;
@@ -19,7 +21,6 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Service
-
 public class OrdenVentaService {
 
     private final OrdenVentaRepository ordenVentaRepository;
@@ -28,10 +29,8 @@ public class OrdenVentaService {
     private final VarianteProductoRepository varianteRepository;
     private final MovimientoStockRepository movimientoStockRepository;
 
-    // Venta minorista: se entrega en el momento, asi que nace COMPLETADA y descuenta stock.
-    // Si falta stock de alguna variante, se lanza 409 y @Transactional deshace toda la venta.
     @Transactional
-    public OrdenVentaModel createOrdenVenta(OrdenVentaDTO dto){
+    public OrdenVentaResponseDTO createOrdenVenta(OrdenVentaDTO dto){
         EnterpriseModel empresa = enterpriseRepository.findById(dto.empresaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa con id " + dto.empresaId() + " no encontrada"));
 
@@ -65,11 +64,37 @@ public class OrdenVentaService {
         movimientos.forEach(m -> m.setOrdenVenta(guardada));
         movimientoStockRepository.saveAll(movimientos);
 
-        return guardada;
+        return toDTO(guardada);
     }
 
-    public OrdenVentaModel getOrdenVentaById(Long id){
-        return ordenVentaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Orden de venta con id " + id + " no encontrada"));
+    public OrdenVentaResponseDTO getOrdenVentaById(Long id){
+        return toDTO(ordenVentaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Orden de venta con id " + id + " no encontrada")));
+    }
+
+    private OrdenVentaResponseDTO toDTO(OrdenVentaModel orden) {
+        List<DetalleOrdenVentaResponseDTO> detalles = orden.getDetalles().stream()
+                .map(d -> new DetalleOrdenVentaResponseDTO(
+                        d.getId(),
+                        d.getVariante().getId(),
+                        d.getVariante().getNombreCompleto(),
+                        d.getCantidad(),
+                        d.getPrecioUnitario(),
+                        d.getSubtotal()
+                ))
+                .toList();
+
+        return new OrdenVentaResponseDTO(
+                orden.getId(),
+                orden.getEmpresa().getId(),
+                orden.getCliente() != null ? orden.getCliente().getId() : null,
+                orden.getCliente() != null ? orden.getCliente().getNombre() : null,
+                orden.getFechaEmision(),
+                orden.getEstado(),
+                orden.getMedioPago(),
+                orden.getCanal(),
+                orden.getTotal(),
+                detalles
+        );
     }
 }
