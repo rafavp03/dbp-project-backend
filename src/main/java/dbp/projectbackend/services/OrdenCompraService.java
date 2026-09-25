@@ -1,20 +1,21 @@
 package dbp.projectbackend.services;
 
 import dbp.projectbackend.dtos.DetalleOrdenCompraDTO;
+import dbp.projectbackend.dtos.DetalleOrdenCompraResponseDTO;
 import dbp.projectbackend.dtos.OrdenCompraDTO;
+import dbp.projectbackend.dtos.OrdenCompraResponseDTO;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
 import dbp.projectbackend.models.*;
 import dbp.projectbackend.repositories.*;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @RequiredArgsConstructor
 @Service
-
 public class OrdenCompraService {
 
     private final OrdenCompraRepository ordenCompraRepository;
@@ -24,7 +25,7 @@ public class OrdenCompraService {
     private final MovimientoStockRepository movimientoStockRepository;
 
     @Transactional
-    public OrdenCompraModel createOrdenCompra(OrdenCompraDTO dto) {
+    public OrdenCompraResponseDTO createOrdenCompra(OrdenCompraDTO dto) {
         EnterpriseModel empresa = enterpriseRepository.findById(dto.empresaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa con id " + dto.empresaId() + " no encontrada"));
 
@@ -51,11 +52,35 @@ public class OrdenCompraService {
         movimientos.forEach(m -> m.setOrdenCompra(guardada));
         movimientoStockRepository.saveAll(movimientos);
 
-        return guardada;
+        return toDTO(guardada);
     }
 
-    public OrdenCompraModel getOrdenCompraById(Long id) {
-        return ordenCompraRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Orden de compra con id " + id + " no encontrada"));
+    public OrdenCompraResponseDTO getOrdenCompraById(Long id) {
+        return toDTO(ordenCompraRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Orden de compra con id " + id + " no encontrada")));
+    }
+
+    private OrdenCompraResponseDTO toDTO(OrdenCompraModel orden) {
+        List<DetalleOrdenCompraResponseDTO> detalles = orden.getDetalles().stream()
+                .map(d -> new DetalleOrdenCompraResponseDTO(
+                        d.getId(),
+                        d.getVariante().getId(),
+                        d.getVariante().getNombreCompleto(),
+                        d.getCantidad(),
+                        d.getPrecioUnitario(),
+                        d.getSubtotal()
+                ))
+                .toList();
+
+        return new OrdenCompraResponseDTO(
+                orden.getId(),
+                orden.getEmpresa().getId(),
+                orden.getProveedor().getId(),
+                orden.getProveedor().getRazonSocial(),
+                orden.getFechaEmision(),
+                orden.getEstado(),
+                orden.getTotal(),
+                detalles
+        );
     }
 }

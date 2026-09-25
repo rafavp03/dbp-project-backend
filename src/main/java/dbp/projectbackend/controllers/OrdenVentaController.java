@@ -1,7 +1,7 @@
 package dbp.projectbackend.controllers;
 
 import dbp.projectbackend.dtos.OrdenVentaDTO;
-import dbp.projectbackend.models.OrdenVentaModel;
+import dbp.projectbackend.dtos.OrdenVentaResponseDTO;
 import dbp.projectbackend.services.OrdenVentaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,15 +18,15 @@ public class OrdenVentaController {
     private final OrdenVentaService ordenVentaService;
 
     @PostMapping
-    public ResponseEntity<OrdenVentaModel> createOrdenVenta(@Valid @RequestBody OrdenVentaDTO ordenVentaDTO) {
-        OrdenVentaModel nuevaOrden = ordenVentaService.createOrdenVenta(ordenVentaDTO);
+    public ResponseEntity<OrdenVentaResponseDTO> createOrdenVenta(@Valid @RequestBody OrdenVentaDTO ordenVentaDTO) {
+        OrdenVentaResponseDTO nuevaOrden = ordenVentaService.createOrdenVenta(ordenVentaDTO);
         return ResponseEntity
-                .created(URI.create("/orden-venta/" + nuevaOrden.getId()))
+                .created(URI.create("/orden-venta/" + nuevaOrden.id()))
                 .body(nuevaOrden);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<OrdenVentaModel> getOrdenVentaById(@PathVariable Long id) {
+    public ResponseEntity<OrdenVentaResponseDTO> getOrdenVentaById(@PathVariable Long id) {
         return ResponseEntity.ok(ordenVentaService.getOrdenVentaById(id));
     }
 }
