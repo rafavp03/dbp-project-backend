@@ -3,6 +3,7 @@ package dbp.projectbackend.models;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.Hibernate;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -57,5 +58,18 @@ public class EnterpriseModel {
     public void removeSupplier(SupplierModel proveedor) {
         proveedores.remove(proveedor);
         proveedor.getEmpresas().remove(this);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        EnterpriseModel other = (EnterpriseModel) o;
+        return id != null && id.equals(other.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Hibernate.getClass(this).hashCode();
     }
 }

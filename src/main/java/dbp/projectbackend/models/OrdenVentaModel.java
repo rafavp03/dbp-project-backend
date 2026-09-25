@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.Hibernate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -64,6 +65,7 @@ public class OrdenVentaModel {
     private BigDecimal total;
 
     @OneToMany(mappedBy = "ordenVenta", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("id")
     private List<DetalleOrdenVentaModel> detalles = new ArrayList<>();
 
     @PrePersist
@@ -101,5 +103,18 @@ public class OrdenVentaModel {
         return detalles.stream()
                 .map(DetalleOrdenVentaModel::getDescuento)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        OrdenVentaModel other = (OrdenVentaModel) o;
+        return id != null && id.equals(other.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Hibernate.getClass(this).hashCode();
     }
 }

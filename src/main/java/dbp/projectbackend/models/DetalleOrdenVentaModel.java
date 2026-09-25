@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.Hibernate;
 
 import java.math.BigDecimal;
 
@@ -68,5 +69,18 @@ public class DetalleOrdenVentaModel {
 
     public BigDecimal getDescuento() {
         return precioLista.subtract(precioUnitario).max(BigDecimal.ZERO).multiply(BigDecimal.valueOf(cantidad));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        DetalleOrdenVentaModel other = (DetalleOrdenVentaModel) o;
+        return id != null && id.equals(other.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Hibernate.getClass(this).hashCode();
     }
 }
