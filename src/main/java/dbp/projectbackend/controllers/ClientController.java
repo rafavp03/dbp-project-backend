@@ -2,10 +2,13 @@ package dbp.projectbackend.controllers;
 
 import dbp.projectbackend.dtos.ClientDTO;
 import dbp.projectbackend.dtos.ClientResponseDTO;
+import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.services.ClientService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -18,32 +21,37 @@ public class ClientController {
 
     private final ClientService service;
 
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")
     @PostMapping
-    public ResponseEntity<ClientResponseDTO> createClient(@RequestParam Long enterpriseId, @Valid @RequestBody ClientDTO dto) {
-        ClientResponseDTO newClient = service.createClient(enterpriseId, dto);
+    public ResponseEntity<ClientResponseDTO> createClient(@AuthenticationPrincipal UserModel user, @Valid @RequestBody ClientDTO dto) {
+        ClientResponseDTO newClient = service.createClient(user, dto);
         return ResponseEntity
-                .created(URI.create("client/"+newClient.id()))
+                .created(URI.create("/client/"+newClient.id()))
                 .body(newClient);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")
     @GetMapping("/{id}")
-    public ResponseEntity<ClientResponseDTO> getClient(@PathVariable Long id) {
-        return ResponseEntity.ok(service.getClientById(id));
+    public ResponseEntity<ClientResponseDTO> getClient(@AuthenticationPrincipal UserModel user, @PathVariable Long id) {
+        return ResponseEntity.ok(service.getClientById(user, id));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")
     @GetMapping
-    public ResponseEntity<List<ClientResponseDTO>> getClientsByEnterprise(@RequestParam Long enterpriseId) {
-        return ResponseEntity.ok(service.getClientsByEnterprise(enterpriseId));
+    public ResponseEntity<List<ClientResponseDTO>> getClients(@AuthenticationPrincipal UserModel user) {
+        return ResponseEntity.ok(service.getClientsByEnterprise(user));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")
     @PutMapping("/{id}")
-    public ResponseEntity<ClientResponseDTO> updateClient(@PathVariable Long id, @Valid @RequestBody ClientDTO dto) {
-        return ResponseEntity.ok(service.updateClient(id, dto));
+    public ResponseEntity<ClientResponseDTO> updateClient(@AuthenticationPrincipal UserModel user, @PathVariable Long id, @Valid @RequestBody ClientDTO dto) {
+        return ResponseEntity.ok(service.updateClient(user, id, dto));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteClient(@PathVariable Long id) {
-        service.deleteClient(id);
+    public ResponseEntity<Void> deleteClient(@AuthenticationPrincipal UserModel user, @PathVariable Long id) {
+        service.deleteClient(user, id);
         return ResponseEntity.noContent().build();
     }
 }
