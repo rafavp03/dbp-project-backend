@@ -7,6 +7,8 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 public record OrdenCompraDTO(
+        @NotNull(message = "Empresa obligatoria")
+        Long empresaId,
 
         @NotNull(message = "Proveedor obligatorio")
         Long proveedorId,
