@@ -7,8 +7,8 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 public record DetalleOrdenCompraDTO(
-        @NotNull(message = "Producto obligatorio")
-        Long productoId,
+        @NotNull(message = "Variante (talla y color) obligatoria")
+        Long varianteId,
 
         @NotNull(message = "Cantidad obligatoria")
         @Min(value = 1, message = "Cantidad debe ser mayor a 0")
