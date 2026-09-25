@@ -35,6 +35,14 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
+    @ExceptionHandler({UnauthorizedException.class})
+    public ProblemDetail unauthorizedHandler(UnauthorizedException ex){
+        ProblemDetail problemDetail = ProblemDetail.forStatus(403);
+        problemDetail.setTitle("Unauthorized");
+        problemDetail.setDetail(ex.getMessage());
+        return problemDetail;
+    }
+
     @ExceptionHandler({ResourceNotFoundException.class})
     public ProblemDetail notFoundHandler(ResourceNotFoundException ex){
         ProblemDetail problemDetail = ProblemDetail.forStatus(404);
