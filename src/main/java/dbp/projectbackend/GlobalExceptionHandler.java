@@ -74,6 +74,16 @@ public class GlobalExceptionHandler {
         return build(400, "Malformed Request Body", "El cuerpo de la petición no es un JSON válido o tiene un formato incorrecto", request);
     }
 
+    @ExceptionHandler({LimiteConsultasException.class})
+    public ProblemDetail limiteConsultasHandler(LimiteConsultasException ex, HttpServletRequest request){
+        return build(429, "Too Many Requests", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler({AsistenteNoDisponibleException.class})
+    public ProblemDetail asistenteNoDisponibleHandler(AsistenteNoDisponibleException ex, HttpServletRequest request){
+        return build(503, "Service Unavailable", ex.getMessage(), request);
+    }
+
     // Parametro con formato invalido, ej. ?desde=25-09-2026 o ?por=YAPEE
     @ExceptionHandler({MethodArgumentTypeMismatchException.class})
     public ProblemDetail typeMismatchHandler(MethodArgumentTypeMismatchException ex, HttpServletRequest request){
