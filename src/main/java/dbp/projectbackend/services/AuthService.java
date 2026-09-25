@@ -3,7 +3,8 @@ package dbp.projectbackend.services;
 import dbp.projectbackend.dtos.AuthResponseDTO;
 import dbp.projectbackend.dtos.LoginDTO;
 import dbp.projectbackend.dtos.RegisterDTO;
-import dbp.projectbackend.exceptions.DataIntegrityViolationException;
+import dbp.projectbackend.exceptions.DuplicateResourceException;
+import dbp.projectbackend.exceptions.InvalidOperationException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
 import dbp.projectbackend.models.EnterpriseModel;
 import dbp.projectbackend.models.Role;
@@ -32,14 +33,14 @@ public class AuthService {
     @Transactional
     public AuthResponseDTO register(RegisterDTO dto) {
         if (userRepository.existsByEmail(dto.email())) {
-            throw new DataIntegrityViolationException("El email "+dto.email()+" ya esta registrado.");
+            throw new DuplicateResourceException("El email "+dto.email()+" ya esta registrado.");
         }
 
         EnterpriseModel empresa = enterpriseRepository.findById(dto.enterpriseId())
             .orElseThrow(() -> new ResourceNotFoundException("Empresa con id "+dto.enterpriseId()+" no encontrada."));
 
         if (userRepository.existsByEmpresaId(empresa.getId())) {
-            throw new DataIntegrityViolationException("La empresa ya tiene administrador. Pidele que te cree un usuario.");
+            throw new InvalidOperationException("La empresa ya tiene administrador. Pidele que te cree un usuario.");
         }
 
         UserModel newUser = new UserModel(

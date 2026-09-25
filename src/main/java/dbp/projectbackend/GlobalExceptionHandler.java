@@ -1,7 +1,6 @@
 package dbp.projectbackend;
 
-import dbp.projectbackend.exceptions.DataIntegrityViolationException;
-import dbp.projectbackend.exceptions.ResourceNotFoundException;
+import dbp.projectbackend.exceptions.*;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -12,11 +11,27 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler({DataIntegrityViolationException.class})
-    public ProblemDetail dataIntegrityViolationHandler(DataIntegrityViolationException ex){
+    @ExceptionHandler({DuplicateResourceException.class})
+    public ProblemDetail duplicateResourceHandler(DuplicateResourceException ex){
         ProblemDetail problemDetail = ProblemDetail.forStatus(409);
-        problemDetail.setTitle("Data Integrity Violation");
-        problemDetail.setDetail(ex.getMessage() != null ? ex.getMessage() : "Error de restricción en la base de datos");
+        problemDetail.setTitle("Duplicate Resource");
+        problemDetail.setDetail(ex.getMessage());
+        return problemDetail;
+    }
+
+    @ExceptionHandler({InsufficientStockException.class})
+    public ProblemDetail insufficientStockHandler(InsufficientStockException ex){
+        ProblemDetail problemDetail = ProblemDetail.forStatus(409);
+        problemDetail.setTitle("Insufficient Stock");
+        problemDetail.setDetail(ex.getMessage());
+        return problemDetail;
+    }
+
+    @ExceptionHandler({InvalidOperationException.class})
+    public ProblemDetail invalidOperationHandler(InvalidOperationException ex){
+        ProblemDetail problemDetail = ProblemDetail.forStatus(400);
+        problemDetail.setTitle("Invalid Operation");
+        problemDetail.setDetail(ex.getMessage());
         return problemDetail;
     }
 

@@ -2,7 +2,8 @@ package dbp.projectbackend.services;
 
 import dbp.projectbackend.dtos.UserDTO;
 import dbp.projectbackend.dtos.UserResponseDTO;
-import dbp.projectbackend.exceptions.DataIntegrityViolationException;
+import dbp.projectbackend.exceptions.DuplicateResourceException;
+import dbp.projectbackend.exceptions.InvalidOperationException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.repositories.UserRepository;
@@ -22,7 +23,7 @@ public class UserService {
     @Transactional
     public UserResponseDTO createUser(UserModel admin, UserDTO dto) {
         if (userRepository.existsByEmail(dto.email())) {
-            throw new DataIntegrityViolationException("El email "+dto.email()+" ya esta registrado.");
+            throw new DuplicateResourceException("El email "+dto.email()+" ya esta registrado.");
         }
 
         UserModel newUser = new UserModel(
@@ -55,7 +56,7 @@ public class UserService {
             throw new ResourceNotFoundException("Usuario con id "+id+" no encontrado.");
         }
         if (user.getId().equals(admin.getId())) {
-            throw new DataIntegrityViolationException("No puedes eliminar tu propio usuario.");
+            throw new InvalidOperationException("No puedes eliminar tu propio usuario.");
         }
 
         userRepository.delete(user);

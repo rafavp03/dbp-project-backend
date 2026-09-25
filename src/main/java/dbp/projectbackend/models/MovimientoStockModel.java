@@ -1,6 +1,7 @@
 package dbp.projectbackend.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import dbp.projectbackend.exceptions.InvalidOperationException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -96,7 +97,7 @@ public class MovimientoStockModel {
     public static MovimientoStockModel ajuste(VarianteProductoModel variante, int nuevoStock, String motivo) {
         int anterior = variante.getStock();
         if (nuevoStock == anterior) {
-            throw new IllegalArgumentException("El nuevo stock es igual al actual, no hay nada que ajustar");
+            throw new InvalidOperationException("El nuevo stock es igual al actual, no hay nada que ajustar");
         }
         variante.ajustarStock(nuevoStock);
         return new MovimientoStockModel(variante, TipoMovimiento.AJUSTE, Math.abs(nuevoStock - anterior), anterior, nuevoStock, motivo);
