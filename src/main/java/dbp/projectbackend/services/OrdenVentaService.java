@@ -5,9 +5,9 @@ import dbp.projectbackend.dtos.DetalleOrdenVentaResponseDTO;
 import dbp.projectbackend.dtos.OrdenVentaDTO;
 import dbp.projectbackend.dtos.OrdenVentaResponseDTO;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
+import dbp.projectbackend.exceptions.UnauthorizedException;
 import dbp.projectbackend.models.*;
 import dbp.projectbackend.repositories.ClientRepository;
-import dbp.projectbackend.repositories.EnterpriseRepository;
 import dbp.projectbackend.repositories.MovimientoStockRepository;
 import dbp.projectbackend.repositories.OrdenVentaRepository;
 import dbp.projectbackend.repositories.VarianteProductoRepository;
@@ -24,15 +24,13 @@ import java.util.List;
 public class OrdenVentaService {
 
     private final OrdenVentaRepository ordenVentaRepository;
-    private final EnterpriseRepository enterpriseRepository;
     private final ClientRepository clientRepository;
     private final VarianteProductoRepository varianteRepository;
     private final MovimientoStockRepository movimientoStockRepository;
 
     @Transactional
-    public OrdenVentaResponseDTO createOrdenVenta(OrdenVentaDTO dto){
-        EnterpriseModel empresa = enterpriseRepository.findById(dto.empresaId())
-                .orElseThrow(() -> new ResourceNotFoundException("Empresa con id " + dto.empresaId() + " no encontrada"));
+    public OrdenVentaResponseDTO createOrdenVenta(UserModel currentUser, OrdenVentaDTO dto){
+        EnterpriseModel empresa = currentUser.getEmpresa();
 
         ClientModel cliente = null;
         if (dto.clienteId() != null) {
@@ -67,9 +65,15 @@ public class OrdenVentaService {
         return toDTO(guardada);
     }
 
-    public OrdenVentaResponseDTO getOrdenVentaById(Long id){
-        return toDTO(ordenVentaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Orden de venta con id " + id + " no encontrada")));
+    public OrdenVentaResponseDTO getOrdenVentaById(UserModel currentUser, Long id){
+        OrdenVentaModel orden = ordenVentaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Orden de venta con id " + id + " no encontrada"));
+
+        if (!orden.getEmpresa().getId().equals(currentUser.getEmpresa().getId())) {
+            throw new UnauthorizedException("No tienes acceso a esta orden de venta");
+        }
+
+        return toDTO(orden);
     }
 
     private OrdenVentaResponseDTO toDTO(OrdenVentaModel orden) {

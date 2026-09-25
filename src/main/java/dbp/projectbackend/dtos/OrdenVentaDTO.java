@@ -10,9 +10,6 @@ import java.util.List;
 
 public record OrdenVentaDTO(
 
-        @NotNull(message = "Empresa obligatoria")
-        Long empresaId,
-
         // Opcional: la mayoria de clientes de una tienda compra de paso
         Long clienteId,
 

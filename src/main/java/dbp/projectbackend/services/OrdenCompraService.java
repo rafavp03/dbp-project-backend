@@ -5,8 +5,12 @@ import dbp.projectbackend.dtos.DetalleOrdenCompraResponseDTO;
 import dbp.projectbackend.dtos.OrdenCompraDTO;
 import dbp.projectbackend.dtos.OrdenCompraResponseDTO;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
+import dbp.projectbackend.exceptions.UnauthorizedException;
 import dbp.projectbackend.models.*;
-import dbp.projectbackend.repositories.*;
+import dbp.projectbackend.repositories.MovimientoStockRepository;
+import dbp.projectbackend.repositories.OrdenCompraRepository;
+import dbp.projectbackend.repositories.SupplierRepository;
+import dbp.projectbackend.repositories.VarianteProductoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,15 +23,13 @@ import java.util.List;
 public class OrdenCompraService {
 
     private final OrdenCompraRepository ordenCompraRepository;
-    private final EnterpriseRepository enterpriseRepository;
     private final SupplierRepository supplierRepository;
     private final VarianteProductoRepository varianteRepository;
     private final MovimientoStockRepository movimientoStockRepository;
 
     @Transactional
-    public OrdenCompraResponseDTO createOrdenCompra(OrdenCompraDTO dto) {
-        EnterpriseModel empresa = enterpriseRepository.findById(dto.empresaId())
-                .orElseThrow(() -> new ResourceNotFoundException("Empresa con id " + dto.empresaId() + " no encontrada"));
+    public OrdenCompraResponseDTO createOrdenCompra(UserModel currentUser, OrdenCompraDTO dto) {
+        EnterpriseModel empresa = currentUser.getEmpresa();
 
         SupplierModel proveedor = supplierRepository.findById(dto.proveedorId())
                 .filter(p -> p.getEmpresas().stream().anyMatch(e -> e.getId().equals(empresa.getId())))
@@ -55,9 +57,15 @@ public class OrdenCompraService {
         return toDTO(guardada);
     }
 
-    public OrdenCompraResponseDTO getOrdenCompraById(Long id) {
-        return toDTO(ordenCompraRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Orden de compra con id " + id + " no encontrada")));
+    public OrdenCompraResponseDTO getOrdenCompraById(UserModel currentUser, Long id) {
+        OrdenCompraModel orden = ordenCompraRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Orden de compra con id " + id + " no encontrada"));
+
+        if (!orden.getEmpresa().getId().equals(currentUser.getEmpresa().getId())) {
+            throw new UnauthorizedException("No tienes acceso a esta orden de compra");
+        }
+
+        return toDTO(orden);
     }
 
     private OrdenCompraResponseDTO toDTO(OrdenCompraModel orden) {
