@@ -15,7 +15,6 @@ public record ProductDTO(
 
         String descripcion,
 
-        // UNIDAD, PAR, JUEGO, etc. Si no se envia, se usa "UNIDAD"
         String unidadMedida,
 
         @DecimalMin(value = "0.00", message = "El precio de compra no puede ser negativo")
@@ -25,6 +24,5 @@ public record ProductDTO(
         @DecimalMin(value = "0.00", inclusive = false, message = "El precio de venta debe ser mayor a 0")
         BigDecimal precioVenta,
 
-        // Opcional: un producto puede no tener categoria asignada
         Long categoriaId
 ) {}

@@ -56,7 +56,6 @@ public class AuthService {
     }
 
     public AuthResponseDTO login(LoginDTO dto) {
-        // si el email o la contraseña no coinciden lanza BadCredentialsException (-> 401)
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(dto.email(), dto.password())
         );

@@ -3,7 +3,6 @@ package dbp.projectbackend.dtos;
 import dbp.projectbackend.models.Role;
 import jakarta.validation.constraints.*;
 
-// lo usa un ADMIN para crear usuarios dentro de su propia empresa
 public record UserDTO(
         @NotBlank(message = "Nombre obligatorio")
         String nombre,

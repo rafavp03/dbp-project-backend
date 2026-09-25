@@ -82,7 +82,6 @@ public class ProductService {
         return toDTO(productRepository.save(product));
     }
 
-    // Borrado logico: un producto que ya aparece en ordenes no se elimina, se desactiva
     @Transactional
     public void deactivateProduct(UserModel currentUser, Long id) {
         ProductModel product = findOwnedProduct(currentUser, id);

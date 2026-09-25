@@ -2,7 +2,6 @@ package dbp.projectbackend.dtos;
 
 import jakarta.validation.constraints.*;
 
-// registro del primer usuario (ADMIN) de una empresa ya creada
 public record RegisterDTO(
         @NotBlank(message = "Nombre obligatorio")
         String nombre,

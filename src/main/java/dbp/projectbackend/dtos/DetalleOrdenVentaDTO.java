@@ -14,7 +14,6 @@ public record DetalleOrdenVentaDTO (
         @Min(value = 1, message = "Cantidad debe ser mayor a 0")
         Integer cantidad,
 
-        // Opcional: si no se envia, se cobra el precio de lista del producto
         @DecimalMin(value = "0.00", inclusive = false, message = "Precio Unitario debe ser mayor a 0")
         BigDecimal precioUnitario
 

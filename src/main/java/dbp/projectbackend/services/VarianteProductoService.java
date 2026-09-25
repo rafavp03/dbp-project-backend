@@ -77,7 +77,6 @@ public class VarianteProductoService {
         return toDTO(varianteRepository.save(variante));
     }
 
-    // Borrado logico: una variante que ya se vendio no se elimina, se desactiva
     @Transactional
     public void deactivateVariante(UserModel currentUser, Long id) {
         VarianteProductoModel variante = findOwnedVariante(currentUser, id);

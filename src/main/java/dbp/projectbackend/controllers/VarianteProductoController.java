@@ -14,8 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.util.List;
 
-// Las variantes (talla + color) son un sub-recurso de producto: se crean y listan
-// bajo /product/{productoId}/variantes; para ver/editar una variante puntual se usa /variante/{id}.
 @RequiredArgsConstructor
 @RestController
 public class VarianteProductoController {
