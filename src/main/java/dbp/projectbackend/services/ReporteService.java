@@ -23,10 +23,6 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-// Reportes de solo lectura sobre las ventas e inventario de UNA empresa.
-// Recibe el empresaId (no el usuario) para que tambien lo puedan usar las herramientas de la IA;
-// quien lo llama es responsable de pasar la empresa del usuario logueado.
-// Solo cuentan las ventas COMPLETADAS (las ANULADAS y PENDIENTES no).
 @RequiredArgsConstructor
 @Service
 @Transactional(readOnly = true)
@@ -38,8 +34,6 @@ public class ReporteService {
 
     private final DetalleOrdenVentaRepository detalleRepository;
     private final VarianteProductoRepository varianteRepository;
-
-    // ---------- ventas ----------
 
     public ResumenVentasDTO resumen(Long empresaId, LocalDate desde, LocalDate hasta) {
         List<DetalleOrdenVentaModel> lineas = lineasDelPeriodo(empresaId, desde, hasta);
@@ -89,15 +83,12 @@ public class ReporteService {
             case MEDIO_PAGO -> ordenarPorTotal(agrupar(lineas, d -> d.getOrdenVenta().getMedioPago().name()), totalGeneral);
             case CANAL -> ordenarPorTotal(agrupar(lineas, d -> d.getOrdenVenta().getCanal().name()), totalGeneral);
             case CATEGORIA -> ordenarPorTotal(agrupar(lineas, d -> nombreCategoria(d.getVariante().getProducto())), totalGeneral);
-            // dia y hora se devuelven en orden cronologico (lunes a domingo, 00:00 a 23:00)
             case DIA_SEMANA -> enOrden(agrupar(lineas, d -> d.getOrdenVenta().getFechaEmision().getDayOfWeek()),
                     this::nombreDia, totalGeneral);
             case HORA -> enOrden(this.<Integer>agrupar(lineas, d -> d.getOrdenVenta().getFechaEmision().getHour()),
                     (Integer h) -> "%02d:00-%02d:00".formatted(h, (h + 1) % 24), totalGeneral);
         };
     }
-
-    // ---------- inventario ----------
 
     public List<StockBajoDTO> stockBajo(Long empresaId) {
         return varianteRepository.findStockBajo(empresaId).stream()
@@ -108,9 +99,6 @@ public class ReporteService {
                 .toList();
     }
 
-    // Variantes con stock que no se venden hace al menos 'dias' dias.
-    // Si nunca se vendieron, se cuenta desde que se registro el producto.
-    // Ordenado por capital inmovilizado: primero lo que mas dinero tiene parado.
     public List<ProductoParadoDTO> stockParado(Long empresaId, int dias) {
         if (dias < 1) {
             throw new InvalidOperationException("Los dias deben ser mayores a 0");
@@ -147,8 +135,6 @@ public class ReporteService {
                 .toList();
     }
 
-    // ---------- helpers ----------
-
     private List<DetalleOrdenVentaModel> lineasDelPeriodo(Long empresaId, LocalDate desde, LocalDate hasta) {
         if (desde == null || hasta == null) {
             throw new InvalidOperationException("Debes indicar las fechas 'desde' y 'hasta'");
@@ -159,7 +145,6 @@ public class ReporteService {
         if (ChronoUnit.DAYS.between(desde, hasta) > MAX_DIAS_RANGO) {
             throw new InvalidOperationException("El rango maximo de un reporte es de un año");
         }
-        // 'hasta' es inclusivo: se busca hasta el inicio del dia siguiente
         return detalleRepository.findVendidosEnPeriodo(empresaId, EstadoOrden.COMPLETADA,
                 desde.atStartOfDay(), hasta.plusDays(1).atStartOfDay());
     }

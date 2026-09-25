@@ -10,9 +10,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
-// Herramientas de SOLO LECTURA con informacion de dinero (ventas, ganancia, costos).
-// Solo se le entregan a la IA cuando el usuario es ADMIN, igual que /reportes.
-// Si una herramienta lanza una excepcion, Spring AI le devuelve el mensaje a la IA para que corrija.
 public class HerramientasAdmin {
 
     private static final int MAX_FILAS = 20;

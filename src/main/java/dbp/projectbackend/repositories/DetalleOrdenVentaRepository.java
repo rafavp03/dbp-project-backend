@@ -13,8 +13,6 @@ import java.util.List;
 @Repository
 public interface DetalleOrdenVentaRepository extends JpaRepository<DetalleOrdenVentaModel, Long> {
 
-    // Lineas vendidas por una empresa en un periodo [desde, hasta).
-    // JOIN FETCH trae la venta, la variante y el producto en una sola consulta.
     @Query("SELECT d FROM DetalleOrdenVentaModel d " +
            "JOIN FETCH d.ordenVenta o " +
            "JOIN FETCH d.variante v " +
@@ -26,7 +24,6 @@ public interface DetalleOrdenVentaRepository extends JpaRepository<DetalleOrdenV
                                                         @Param("desde") LocalDateTime desde,
                                                         @Param("hasta") LocalDateTime hasta);
 
-    // Fecha de la ultima venta de cada variante de la empresa. Cada fila: [varianteId, fecha]
     @Query("SELECT d.variante.id, MAX(d.ordenVenta.fechaEmision) FROM DetalleOrdenVentaModel d " +
            "WHERE d.ordenVenta.empresa.id = :empresaId AND d.ordenVenta.estado = :estado " +
            "GROUP BY d.variante.id")

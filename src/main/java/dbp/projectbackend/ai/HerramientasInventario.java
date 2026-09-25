@@ -6,9 +6,6 @@ import org.springframework.ai.tool.annotation.Tool;
 
 import java.util.List;
 
-// Herramientas de SOLO LECTURA que la IA puede usar con cualquier usuario (ADMIN o EMPLEADO).
-// No es un bean: se crea en cada pregunta con la empresa del usuario logueado,
-// asi la IA nunca puede pedir datos de otra empresa (no hay parametro para eso).
 public class HerramientasInventario {
 
     private static final int MAX_FILAS = 30;

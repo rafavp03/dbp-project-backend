@@ -40,7 +40,6 @@ public class UserModel implements UserDetails {
     @Column(nullable=false, unique = true)
     private String email;
 
-    // se guarda encriptada con BCrypt, nunca en texto plano
     @JsonIgnore
     @Column(nullable=false)
     private String password;
@@ -57,13 +56,11 @@ public class UserModel implements UserDetails {
     @JsonIgnoreProperties("proveedores")
     private EnterpriseModel empresa;
 
-    // lifecycle methods
     @PrePersist
     protected void onCreate() {
         this.fechaRegistro = LocalDateTime.now();
     }
 
-    // UserDetails (Spring Security): el "username" con el que se inicia sesion es el email
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));

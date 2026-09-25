@@ -31,7 +31,6 @@ public class OrdenCompraModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Necesario porque un proveedor puede atender a varias empresas
     @ManyToOne(optional = false)
     @JoinColumn(name = "empresa_id", nullable = false)
     @JsonIgnoreProperties("proveedores")

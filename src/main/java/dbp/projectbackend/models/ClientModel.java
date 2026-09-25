@@ -29,8 +29,6 @@ public class ClientModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // DNI (8) o RUC (11). Es unico por empresa, no global:
-    // la misma persona puede ser cliente de dos negocios distintos.
     @Column(nullable=false)
     private String documento;
 
@@ -46,13 +44,11 @@ public class ClientModel {
     @Column(name = "fecha_registro", nullable=false, updatable=false)
     private LocalDateTime fechaRegistro;
 
-    // Cada cliente pertenece a una sola empresa (a diferencia de Proveedor, que es N:M)
     @ManyToOne(optional = false)
     @JoinColumn(name = "empresa_id", nullable = false)
     @JsonIgnoreProperties("proveedores")
     private EnterpriseModel empresa;
 
-    // lifecycle methods
     @PrePersist
     protected void onCreate() {
         this.fechaRegistro = LocalDateTime.now();

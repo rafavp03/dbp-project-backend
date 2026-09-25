@@ -9,8 +9,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-// Combinacion talla + color de un producto. El stock se controla a este nivel:
-// "Polo basico" es el producto; "Polo basico M Negro" es la variante.
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @Setter
@@ -35,14 +33,12 @@ public class VarianteProductoModel {
     @JsonIgnoreProperties({"variantes", "empresa"})
     private ProductModel producto;
 
-    // S, M, L, XL, 28, 30, STD, etc.
     @Column(nullable = false)
     private String talla;
 
     @Column(nullable = false)
     private String color;
 
-    // Codigo de barras o etiqueta propia (opcional)
     private String sku;
 
     @Column(nullable = false)
@@ -51,19 +47,15 @@ public class VarianteProductoModel {
     @Column(name = "stock_minimo", nullable = false)
     private Integer stockMinimo = 0;
 
-    // Borrado logico: una variante que ya se vendio no se elimina, se desactiva
     @Column(nullable = false)
     private Boolean activo = true;
 
-    // lifecycle methods
     @PrePersist
     protected void onCreate() {
         if (this.stock == null) this.stock = 0;
         if (this.stockMinimo == null) this.stockMinimo = 0;
         if (this.activo == null) this.activo = true;
     }
-
-    // helper methods (inventario)
 
     public void aumentarStock(int cantidad) {
         if (cantidad <= 0) {
@@ -85,7 +77,6 @@ public class VarianteProductoModel {
         this.stock -= cantidad;
     }
 
-    // Ajuste por inventario fisico: fija el stock al valor contado
     public void ajustarStock(int nuevoStock) {
         if (nuevoStock < 0) {
             throw new InvalidOperationException("El stock no puede ser negativo");
@@ -97,7 +88,6 @@ public class VarianteProductoModel {
         return stock <= stockMinimo;
     }
 
-    // Ej: "Polo basico - M - Negro"
     public String getNombreCompleto() {
         String nombre = producto != null ? producto.getNombre() : "";
         return nombre + " - " + talla + " - " + color;

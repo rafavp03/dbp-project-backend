@@ -42,13 +42,11 @@ public class EnterpriseModel {
     )
     private Set<SupplierModel> proveedores = new HashSet<>();
 
-    // lifecycle methods
     @PrePersist
     protected void onCreate() {
         this.fechaRegistro = LocalDateTime.now();
     }
 
-    // helper methods
     public void addSupplier(SupplierModel proveedor) {
         proveedores.add(proveedor);
         proveedor.getEmpresas().add(this);

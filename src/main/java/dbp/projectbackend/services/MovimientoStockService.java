@@ -52,7 +52,6 @@ public class MovimientoStockService {
         return toDTO(movimientoStockRepository.save(movimiento));
     }
 
-    // Kardex: historial de movimientos de una variante, del mas reciente al mas antiguo
     public List<MovimientoStockResponseDTO> getKardexByVariante(UserModel currentUser, Long varianteId) {
         findOwnedVariante(currentUser, varianteId);
         return movimientoStockRepository.findByVarianteIdOrderByFechaDesc(varianteId).stream()
@@ -60,7 +59,6 @@ public class MovimientoStockService {
                 .toList();
     }
 
-    // Alertas de quiebre de stock de toda la empresa (variantes activas en o bajo su stock minimo)
     public List<VarianteProductoResponseDTO> getStockBajo(UserModel currentUser) {
         return varianteRepository.findStockBajo(currentUser.getEmpresa().getId()).stream()
                 .map(v -> new VarianteProductoResponseDTO(

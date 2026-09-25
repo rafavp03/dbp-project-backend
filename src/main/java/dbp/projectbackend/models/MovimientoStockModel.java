@@ -10,8 +10,6 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-// Kardex: cada cambio de stock de una variante (talla + color) queda registrado aqui.
-// Los movimientos no se editan ni se eliminan; un error se corrige con otro movimiento.
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @Setter
@@ -41,8 +39,6 @@ public class MovimientoStockModel {
     @Column(nullable = false)
     private TipoMovimiento tipo;
 
-    // Unidades movidas, siempre positivo. La direccion la indica el tipo
-    // (en un AJUSTE se ve comparando stockAnterior con stockResultante).
     @Column(nullable = false)
     private Integer cantidad;
 
@@ -57,7 +53,6 @@ public class MovimientoStockModel {
     @Column(nullable = false, updatable = false)
     private LocalDateTime fecha;
 
-    // Documento que origino el movimiento (opcional: un ajuste no tiene orden)
     @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "orden_compra_id")
@@ -68,13 +63,10 @@ public class MovimientoStockModel {
     @JoinColumn(name = "orden_venta_id")
     private OrdenVentaModel ordenVenta;
 
-    // lifecycle methods
     @PrePersist
     protected void onCreate() {
         this.fecha = LocalDateTime.now();
     }
-
-    // factory methods: actualizan el stock de la variante y registran el movimiento
 
     public static MovimientoStockModel entrada(VarianteProductoModel variante, int cantidad, String motivo) {
         int anterior = variante.getStock();
@@ -103,7 +95,6 @@ public class MovimientoStockModel {
         return new MovimientoStockModel(variante, TipoMovimiento.AJUSTE, Math.abs(nuevoStock - anterior), anterior, nuevoStock, motivo);
     }
 
-    // En el JSON solo se expone el id de la orden, no la orden completa
     public Long getOrdenCompraId() {
         return ordenCompra != null ? ordenCompra.getId() : null;
     }
