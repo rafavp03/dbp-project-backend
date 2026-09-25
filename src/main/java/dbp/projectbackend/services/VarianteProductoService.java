@@ -43,6 +43,7 @@ public class VarianteProductoService {
         return toDTO(varianteRepository.save(newVariante));
     }
 
+    @Transactional(readOnly = true)
     public List<VarianteProductoResponseDTO> getVariantesByProducto(UserModel currentUser, Long productoId) {
         findOwnedProduct(currentUser, productoId);
         return varianteRepository.findByProductoId(productoId).stream()
@@ -50,6 +51,7 @@ public class VarianteProductoService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public VarianteProductoResponseDTO getVarianteById(UserModel currentUser, Long id) {
         return toDTO(findOwnedVariante(currentUser, id));
     }

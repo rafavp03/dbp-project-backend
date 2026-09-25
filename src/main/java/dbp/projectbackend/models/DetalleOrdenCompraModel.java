@@ -29,11 +29,11 @@ public class DetalleOrdenCompraModel {
 
     // evita recursion infinita al serializar la orden a JSON (orden -> detalles -> orden -> ...)
     @JsonIgnore
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "orden_compra_id", nullable = false)
     private OrdenCompraModel ordenCompra;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "variante_id", nullable = false)
     private VarianteProductoModel variante;
 

@@ -47,7 +47,7 @@ public class ClientModel {
     private LocalDateTime fechaRegistro;
 
     // Cada cliente pertenece a una sola empresa (a diferencia de Proveedor, que es N:M)
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "empresa_id", nullable = false)
     @JsonIgnoreProperties("proveedores")
     private EnterpriseModel empresa;

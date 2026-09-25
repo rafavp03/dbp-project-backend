@@ -35,12 +35,14 @@ public class CategoryService {
         return toDTO(categoryRepository.save(newCategory));
     }
 
+    @Transactional(readOnly = true)
     public List<CategoryResponseDTO> getCategoriesByEnterprise(UserModel currentUser) {
         return categoryRepository.findByEmpresaId(currentUser.getEmpresa().getId()).stream()
                 .map(this::toDTO)
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public CategoryResponseDTO getCategoryById(UserModel currentUser, Long id) {
         return toDTO(findOwnedCategory(currentUser, id));
     }

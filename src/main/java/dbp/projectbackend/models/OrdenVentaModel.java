@@ -33,13 +33,13 @@ public class OrdenVentaModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "empresa_id", nullable = false)
     @JsonIgnoreProperties("proveedores")
     private EnterpriseModel empresa;
 
     // Opcional: en una tienda minorista la mayoria compra de paso y no deja sus datos
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cliente_id")
     @JsonIgnoreProperties("empresa")
     private ClientModel cliente;

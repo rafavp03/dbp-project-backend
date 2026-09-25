@@ -43,7 +43,7 @@ public class CategoryModel {
     private LocalDateTime fechaRegistro;
 
     // Cada categoria pertenece a una sola empresa
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "empresa_id", nullable = false)
     @JsonIgnoreProperties("proveedores")
     private EnterpriseModel empresa;

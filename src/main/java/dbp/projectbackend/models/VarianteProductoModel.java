@@ -30,7 +30,7 @@ public class VarianteProductoModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "producto_id", nullable = false)
     @JsonIgnoreProperties({"variantes", "empresa"})
     private ProductModel producto;

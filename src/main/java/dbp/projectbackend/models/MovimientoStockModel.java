@@ -33,7 +33,7 @@ public class MovimientoStockModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "variante_id", nullable = false)
     private VarianteProductoModel variante;
 
@@ -59,12 +59,12 @@ public class MovimientoStockModel {
 
     // Documento que origino el movimiento (opcional: un ajuste no tiene orden)
     @JsonIgnore
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "orden_compra_id")
     private OrdenCompraModel ordenCompra;
 
     @JsonIgnore
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "orden_venta_id")
     private OrdenVentaModel ordenVenta;
 

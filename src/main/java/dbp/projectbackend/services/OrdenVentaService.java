@@ -65,6 +65,7 @@ public class OrdenVentaService {
         return toDTO(guardada);
     }
 
+    @Transactional(readOnly = true)
     public OrdenVentaResponseDTO getOrdenVentaById(UserModel currentUser, Long id){
         OrdenVentaModel orden = ordenVentaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Orden de venta con id " + id + " no encontrada"));

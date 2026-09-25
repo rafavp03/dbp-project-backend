@@ -7,6 +7,7 @@ import dbp.projectbackend.exceptions.UnauthorizedException;
 import dbp.projectbackend.models.EnterpriseModel;
 import dbp.projectbackend.models.SupplierModel;
 import dbp.projectbackend.models.UserModel;
+import dbp.projectbackend.repositories.EnterpriseRepository;
 import dbp.projectbackend.repositories.SupplierRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,12 +19,13 @@ import java.util.List;
 @Service
 public class SupplierService {
     private final SupplierRepository supplierRepository;
+    private final EnterpriseRepository enterpriseRepository;
 
     // Un proveedor puede compartirse entre varias empresas: si ya existe (mismo RUC),
     // solo se vincula a la empresa actual en vez de duplicarlo.
     @Transactional
     public SupplierResponseDTO createSupplier(UserModel currentUser, SupplierDTO dto) {
-        EnterpriseModel empresa = currentUser.getEmpresa();
+        EnterpriseModel empresa = findEmpresa(currentUser);
 
         SupplierModel supplier = supplierRepository.findByRuc(dto.ruc())
                 .orElseGet(() -> {
@@ -40,14 +42,22 @@ public class SupplierService {
         return toDTO(supplier);
     }
 
+    @Transactional(readOnly = true)
     public SupplierResponseDTO getSupplierById(UserModel currentUser, Long id) {
         return toDTO(findOwnedSupplier(currentUser, id));
     }
 
+    @Transactional(readOnly = true)
     public List<SupplierResponseDTO> getSuppliersByEnterprise(UserModel currentUser) {
-        return currentUser.getEmpresa().getProveedores().stream()
+        return supplierRepository.findByEmpresasId(currentUser.getEmpresa().getId()).stream()
                 .map(this::toDTO)
                 .toList();
+    }
+
+    private EnterpriseModel findEmpresa(UserModel currentUser) {
+        Long empresaId = currentUser.getEmpresa().getId();
+        return enterpriseRepository.findById(empresaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa con id " + empresaId + " no encontrada."));
     }
 
     private SupplierModel findOwnedSupplier(UserModel currentUser, Long id) {

@@ -45,6 +45,7 @@ public class ProductService {
         return toDTO(productRepository.save(newProduct));
     }
 
+    @Transactional(readOnly = true)
     public List<ProductResponseDTO> getProductsByEnterprise(UserModel currentUser, boolean soloActivos) {
         Long empresaId = currentUser.getEmpresa().getId();
         List<ProductModel> productos = soloActivos
@@ -54,6 +55,7 @@ public class ProductService {
         return productos.stream().map(this::toDTO).toList();
     }
 
+    @Transactional(readOnly = true)
     public ProductResponseDTO getProductById(UserModel currentUser, Long id) {
         return toDTO(findOwnedProduct(currentUser, id));
     }

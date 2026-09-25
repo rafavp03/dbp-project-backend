@@ -52,7 +52,7 @@ public class UserModel implements UserDetails {
     @Column(name = "fecha_registro", nullable=false, updatable=false)
     private LocalDateTime fechaRegistro;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "empresa_id", nullable = false)
     @JsonIgnoreProperties("proveedores")
     private EnterpriseModel empresa;

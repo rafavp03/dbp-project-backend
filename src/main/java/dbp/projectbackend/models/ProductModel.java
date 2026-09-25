@@ -65,13 +65,13 @@ public class ProductModel {
     private LocalDateTime fechaRegistro;
 
     // Opcional: un producto puede no tener categoria asignada
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "categoria_id")
     @JsonIgnoreProperties("empresa")
     private CategoryModel categoria;
 
     // Cada producto pertenece a una sola empresa (igual que Cliente)
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "empresa_id", nullable = false)
     @JsonIgnoreProperties("proveedores")
     private EnterpriseModel empresa;

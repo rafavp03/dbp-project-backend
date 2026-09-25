@@ -36,10 +36,12 @@ public class ClientService {
         return toDTO(clientRepository.save(newClient));
     }
 
+    @Transactional(readOnly = true)
     public ClientResponseDTO getClientById(UserModel currentUser, Long id) {
         return toDTO(findOwnedClient(currentUser, id));
     }
 
+    @Transactional(readOnly = true)
     public List<ClientResponseDTO> getClientsByEnterprise(UserModel currentUser) {
         return clientRepository.findByEmpresaId(currentUser.getEmpresa().getId()).stream()
                 .map(this::toDTO)

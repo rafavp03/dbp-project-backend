@@ -32,12 +32,12 @@ public class OrdenCompraModel {
     private Long id;
 
     // Necesario porque un proveedor puede atender a varias empresas
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "empresa_id", nullable = false)
     @JsonIgnoreProperties("proveedores")
     private EnterpriseModel empresa;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "proveedor_id", nullable = false)
     @JsonIgnoreProperties("empresas")
     private SupplierModel proveedor;
