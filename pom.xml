@@ -31,7 +31,6 @@
         <spring-ai.version>2.0.1</spring-ai.version>
     </properties>
 
-    <!-- Spring AI: fija versiones compatibles de todos sus modulos -->
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -81,7 +80,6 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-        <!-- IA: cliente de Gemini (Google GenAI) para el asistente del negocio -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-starter-model-google-genai</artifactId>

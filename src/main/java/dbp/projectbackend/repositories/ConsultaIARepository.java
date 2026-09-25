@@ -9,9 +9,7 @@ import java.util.List;
 
 @Repository
 public interface ConsultaIARepository extends JpaRepository<ConsultaIAModel, Long> {
-    // Preguntas respondidas desde una fecha (para el limite diario)
     long countByUsuarioIdAndExitosaTrueAndFechaGreaterThanEqual(Long usuarioId, LocalDateTime desde);
 
-    // Ultimas 20 preguntas del usuario (historial)
     List<ConsultaIAModel> findTop20ByUsuarioIdOrderByFechaDesc(Long usuarioId);
 }

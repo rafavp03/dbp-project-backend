@@ -19,8 +19,6 @@ import java.util.List;
 public class SupplierService {
     private final SupplierRepository supplierRepository;
 
-    // Un proveedor puede compartirse entre varias empresas: si ya existe (mismo RUC),
-    // solo se vincula a la empresa actual en vez de duplicarlo.
     @Transactional
     public SupplierResponseDTO createSupplier(UserModel currentUser, SupplierDTO dto) {
         EnterpriseModel empresa = currentUser.getEmpresa();

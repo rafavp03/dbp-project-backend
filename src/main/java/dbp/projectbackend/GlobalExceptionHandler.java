@@ -84,7 +84,6 @@ public class GlobalExceptionHandler {
         return build(503, "Service Unavailable", ex.getMessage(), request);
     }
 
-    // Parametro con formato invalido, ej. ?desde=25-09-2026 o ?por=YAPEE
     @ExceptionHandler({MethodArgumentTypeMismatchException.class})
     public ProblemDetail typeMismatchHandler(MethodArgumentTypeMismatchException ex, HttpServletRequest request){
         return build(400, "Invalid Parameter", "Valor invalido para el parametro '" + ex.getName() + "': " + ex.getValue(), request);

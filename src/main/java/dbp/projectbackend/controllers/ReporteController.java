@@ -13,8 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 
-// Reportes del negocio del usuario logueado (la empresa sale del token).
-// Si no se envian fechas, se usan los ultimos 30 dias.
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/reportes")
@@ -65,7 +63,6 @@ public class ReporteController {
         return ResponseEntity.ok(service.stockParado(empresaId(user), dias));
     }
 
-    // helpers
     private Long empresaId(UserModel user) {
         return user.getEmpresa().getId();
     }

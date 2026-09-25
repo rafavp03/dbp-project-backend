@@ -38,13 +38,11 @@ public class OrdenVentaModel {
     @JsonIgnoreProperties("proveedores")
     private EnterpriseModel empresa;
 
-    // Opcional: en una tienda minorista la mayoria compra de paso y no deja sus datos
     @ManyToOne
     @JoinColumn(name = "cliente_id")
     @JsonIgnoreProperties("empresa")
     private ClientModel cliente;
 
-    // Con hora, para analizar en que dias y horas se vende mas
     @Column(name = "fecha_emision", nullable = false, updatable = false)
     private LocalDateTime fechaEmision;
 
@@ -89,14 +87,12 @@ public class OrdenVentaModel {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    // Ganancia de toda la venta (precio cobrado - costo)
     public BigDecimal getGananciaTotal() {
         return detalles.stream()
                 .map(DetalleOrdenVentaModel::getGanancia)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    // Cuanto se rebajo en total respecto al precio de lista
     public BigDecimal getDescuentoTotal() {
         return detalles.stream()
                 .map(DetalleOrdenVentaModel::getDescuento)

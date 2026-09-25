@@ -69,7 +69,6 @@ public class ClientService {
         clientRepository.delete(findOwnedClient(currentUser, id));
     }
 
-    // helper methods
     private ClientModel findOwnedClient(UserModel currentUser, Long id) {
         ClientModel client = clientRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente con id "+id+" no encontrado."));

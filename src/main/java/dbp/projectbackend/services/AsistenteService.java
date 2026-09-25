@@ -24,9 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-// Asistente de IA del negocio.
-// Seguridad: la IA solo puede usar las herramientas que se le entregan aqui (solo lectura),
-// y cada herramienta ya viene fijada a la empresa del usuario logueado.
 @Slf4j
 @Service
 public class AsistenteService {
@@ -65,7 +62,6 @@ public class AsistenteService {
         Long empresaId = usuario.getEmpresa().getId();
         boolean esAdmin = usuario.getRole() == Role.ADMIN;
 
-        // Solo estas herramientas existen para la IA. EMPLEADO no recibe las de dinero.
         List<Object> herramientas = new ArrayList<>();
         herramientas.add(new HerramientasInventario(reporteService, empresaId));
         if (esAdmin) {
@@ -103,8 +99,6 @@ public class AsistenteService {
                         c.getExitosa(), c.getFecha()))
                 .toList();
     }
-
-    // helpers
 
     private long consultasDeHoy(UserModel usuario) {
         return consultaRepository.countByUsuarioIdAndExitosaTrueAndFechaGreaterThanEqual(
