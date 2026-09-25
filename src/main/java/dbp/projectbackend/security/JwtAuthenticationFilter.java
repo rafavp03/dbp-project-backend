@@ -17,8 +17,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-// Lee el header "Authorization: Bearer <token>" en cada request y, si el token es valido,
-// deja al usuario autenticado en el SecurityContext
 @RequiredArgsConstructor
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -52,7 +50,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         } catch (JwtException | UsernameNotFoundException ex) {
-            // token invalido/expirado o usuario borrado: se sigue sin autenticar y Security responde 401
             SecurityContextHolder.clearContext();
         }
 

@@ -60,7 +60,6 @@ public class CategoryService {
         return toDTO(categoryRepository.save(category));
     }
 
-    // Borrado logico: una categoria con productos asociados no se elimina, se desactiva
     @Transactional
     public void deactivateCategory(UserModel currentUser, Long id) {
         CategoryModel category = findOwnedCategory(currentUser, id);

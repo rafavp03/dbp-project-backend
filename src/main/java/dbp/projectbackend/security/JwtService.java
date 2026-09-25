@@ -43,7 +43,6 @@ public class JwtService {
                 && claims.getExpiration().after(new Date());
     }
 
-    // lanza JwtException si el token esta mal firmado, alterado o expirado
     private Claims extractClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())

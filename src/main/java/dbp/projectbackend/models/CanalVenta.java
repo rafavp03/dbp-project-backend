@@ -1,7 +1,7 @@
 package dbp.projectbackend.models;
 
 public enum CanalVenta {
-    TIENDA,     // venta presencial en el puesto / galeria
+    TIENDA,
     WHATSAPP,
     INSTAGRAM,
     TIKTOK,

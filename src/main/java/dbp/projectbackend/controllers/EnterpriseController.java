@@ -16,7 +16,6 @@ import java.net.URI;
 public class EnterpriseController {
     private final EnterpriseService service;
 
-    // Publico: un negocio nuevo se registra sin cuenta todavia (ver SecurityConfig)
     @PostMapping
     public ResponseEntity<EnterpriseResponseDTO> createEnterprise(@Valid @RequestBody EnterpriseDTO dto) {
         EnterpriseResponseDTO newEnterprise = service.createEnterprise(dto);
