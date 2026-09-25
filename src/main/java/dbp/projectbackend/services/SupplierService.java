@@ -1,45 +1,75 @@
 package dbp.projectbackend.services;
 
 import dbp.projectbackend.dtos.SupplierDTO;
+import dbp.projectbackend.dtos.SupplierResponseDTO;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
+import dbp.projectbackend.exceptions.UnauthorizedException;
 import dbp.projectbackend.models.EnterpriseModel;
 import dbp.projectbackend.models.SupplierModel;
-import dbp.projectbackend.repositories.EnterpriseRepository;
+import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.repositories.SupplierRepository;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @RequiredArgsConstructor
 @Service
 public class SupplierService {
     private final SupplierRepository supplierRepository;
-    private final EnterpriseRepository enterpriseRepository;
-    private final ModelMapper modelMapper;
 
+    // Un proveedor puede compartirse entre varias empresas: si ya existe (mismo RUC),
+    // solo se vincula a la empresa actual en vez de duplicarlo.
     @Transactional
-    public SupplierModel createSupplier(Long enterpriseId, SupplierDTO dto) {
-        SupplierModel newSupplier = supplierRepository.findByRuc(dto.ruc())
-            .orElseGet(() -> {
-                SupplierModel mappedSupplier = modelMapper.map(dto, SupplierModel.class);
-                return supplierRepository.save(mappedSupplier);
-            });
+    public SupplierResponseDTO createSupplier(UserModel currentUser, SupplierDTO dto) {
+        EnterpriseModel empresa = currentUser.getEmpresa();
 
-        EnterpriseModel assignedEnterprise = enterpriseRepository.findById(enterpriseId)
-            .orElseThrow(() -> new ResourceNotFoundException("Empresa con id "+enterpriseId+" no encontrada."));
+        SupplierModel supplier = supplierRepository.findByRuc(dto.ruc())
+                .orElseGet(() -> {
+                    SupplierModel nuevo = new SupplierModel(dto.ruc(), dto.razonSocial());
+                    nuevo.setTelefono(dto.telefono());
+                    nuevo.setCorreo(dto.correo());
+                    return supplierRepository.save(nuevo);
+                });
 
-        if (!assignedEnterprise.getProveedores().contains(newSupplier)) {
-            assignedEnterprise.addSupplier(newSupplier);
+        if (!empresa.getProveedores().contains(supplier)) {
+            empresa.addSupplier(supplier);
         }
 
-        return newSupplier;
+        return toDTO(supplier);
     }
 
-    public SupplierDTO getSupplierById(Long id) {
-        return modelMapper.map(
-                supplierRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Proveedor con id"+id+" no encontrado.")),
-                SupplierDTO.class
+    public SupplierResponseDTO getSupplierById(UserModel currentUser, Long id) {
+        return toDTO(findOwnedSupplier(currentUser, id));
+    }
+
+    public List<SupplierResponseDTO> getSuppliersByEnterprise(UserModel currentUser) {
+        return currentUser.getEmpresa().getProveedores().stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
+    private SupplierModel findOwnedSupplier(UserModel currentUser, Long id) {
+        SupplierModel supplier = supplierRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Proveedor con id " + id + " no encontrado."));
+
+        boolean perteneceAEmpresa = supplier.getEmpresas().stream()
+                .anyMatch(e -> e.getId().equals(currentUser.getEmpresa().getId()));
+
+        if (!perteneceAEmpresa) {
+            throw new UnauthorizedException("No tienes acceso a este proveedor.");
+        }
+        return supplier;
+    }
+
+    private SupplierResponseDTO toDTO(SupplierModel supplier) {
+        return new SupplierResponseDTO(
+                supplier.getId(),
+                supplier.getRuc(),
+                supplier.getRazonSocial(),
+                supplier.getTelefono(),
+                supplier.getCorreo()
         );
     }
 }

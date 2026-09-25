@@ -4,10 +4,11 @@ import dbp.projectbackend.dtos.ClientDTO;
 import dbp.projectbackend.dtos.ClientResponseDTO;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
+import dbp.projectbackend.exceptions.UnauthorizedException;
 import dbp.projectbackend.models.ClientModel;
 import dbp.projectbackend.models.EnterpriseModel;
+import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.repositories.ClientRepository;
-import dbp.projectbackend.repositories.EnterpriseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,18 +19,16 @@ import java.util.List;
 @Service
 public class ClientService {
     private final ClientRepository clientRepository;
-    private final EnterpriseRepository enterpriseRepository;
 
     @Transactional
-    public ClientResponseDTO createClient(Long enterpriseId, ClientDTO dto) {
-        EnterpriseModel assignedEnterprise = enterpriseRepository.findById(enterpriseId)
-            .orElseThrow(() -> new ResourceNotFoundException("Empresa con id "+enterpriseId+" no encontrada."));
+    public ClientResponseDTO createClient(UserModel currentUser, ClientDTO dto) {
+        EnterpriseModel empresa = currentUser.getEmpresa();
 
-        if (clientRepository.existsByEmpresaIdAndDocumento(enterpriseId, dto.documento())) {
+        if (clientRepository.existsByEmpresaIdAndDocumento(empresa.getId(), dto.documento())) {
             throw new DuplicateResourceException("Ya existe un cliente con documento "+dto.documento()+" en esta empresa.");
         }
 
-        ClientModel newClient = new ClientModel(dto.documento(), dto.nombre(), assignedEnterprise);
+        ClientModel newClient = new ClientModel(dto.documento(), dto.nombre(), empresa);
         newClient.setTelefono(dto.telefono());
         newClient.setCorreo(dto.correo());
         newClient.setDireccion(dto.direccion());
@@ -37,24 +36,20 @@ public class ClientService {
         return toDTO(clientRepository.save(newClient));
     }
 
-    public ClientResponseDTO getClientById(Long id) {
-        return toDTO(findClient(id));
+    public ClientResponseDTO getClientById(UserModel currentUser, Long id) {
+        return toDTO(findOwnedClient(currentUser, id));
     }
 
-    public List<ClientResponseDTO> getClientsByEnterprise(Long enterpriseId) {
-        if (!enterpriseRepository.existsById(enterpriseId)) {
-            throw new ResourceNotFoundException("Empresa con id "+enterpriseId+" no encontrada.");
-        }
-        return clientRepository.findByEmpresaId(enterpriseId).stream()
+    public List<ClientResponseDTO> getClientsByEnterprise(UserModel currentUser) {
+        return clientRepository.findByEmpresaId(currentUser.getEmpresa().getId()).stream()
                 .map(this::toDTO)
                 .toList();
     }
 
     @Transactional
-    public ClientResponseDTO updateClient(Long id, ClientDTO dto) {
-        ClientModel client = findClient(id);
+    public ClientResponseDTO updateClient(UserModel currentUser, Long id, ClientDTO dto) {
+        ClientModel client = findOwnedClient(currentUser, id);
 
-        // si cambia el documento, validar que no choque con otro cliente de la misma empresa
         if (!client.getDocumento().equals(dto.documento())
                 && clientRepository.existsByEmpresaIdAndDocumento(client.getEmpresa().getId(), dto.documento())) {
             throw new DuplicateResourceException("Ya existe un cliente con documento "+dto.documento()+" en esta empresa.");
@@ -70,14 +65,19 @@ public class ClientService {
     }
 
     @Transactional
-    public void deleteClient(Long id) {
-        clientRepository.delete(findClient(id));
+    public void deleteClient(UserModel currentUser, Long id) {
+        clientRepository.delete(findOwnedClient(currentUser, id));
     }
 
     // helper methods
-    private ClientModel findClient(Long id) {
-        return clientRepository.findById(id)
+    private ClientModel findOwnedClient(UserModel currentUser, Long id) {
+        ClientModel client = clientRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente con id "+id+" no encontrado."));
+
+        if (!client.getEmpresa().getId().equals(currentUser.getEmpresa().getId())) {
+            throw new UnauthorizedException("No tienes acceso a este cliente.");
+        }
+        return client;
     }
 
     private ClientResponseDTO toDTO(ClientModel client) {
