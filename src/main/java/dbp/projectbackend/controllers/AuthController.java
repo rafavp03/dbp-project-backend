@@ -1,6 +1,7 @@
 package dbp.projectbackend.controllers;
 
 import dbp.projectbackend.dtos.request.LoginDTO;
+import dbp.projectbackend.dtos.request.RefreshTokenDTO;
 import dbp.projectbackend.dtos.request.RegisterDTO;
 import dbp.projectbackend.dtos.response.AuthResponseDTO;
 import dbp.projectbackend.services.AuthService;
@@ -23,6 +24,11 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody RegisterDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.register(dto));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponseDTO> refresh(@Valid @RequestBody RefreshTokenDTO dto) {
+        return ResponseEntity.ok(service.refresh(dto));
     }
 
     @PostMapping("/login")

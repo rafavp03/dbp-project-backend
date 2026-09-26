@@ -47,13 +47,18 @@ public class GlobalExceptionHandler {
         return build(400, "Invalid Operation", ex.getMessage(), request);
     }
 
+    @ExceptionHandler({InvalidTokenException.class})
+    public ProblemDetail invalidTokenHandler(InvalidTokenException ex, HttpServletRequest request){
+        return build(401, "Unauthorized", ex.getMessage(), request);
+    }
+
     @ExceptionHandler({QueryLimitExceededException.class})
-    public ProblemDetail limiteConsultasHandler(QueryLimitExceededException ex, HttpServletRequest request){
+    public ProblemDetail queryLimitHandler(QueryLimitExceededException ex, HttpServletRequest request){
         return build(429, "Too Many Requests", ex.getMessage(), request);
     }
 
     @ExceptionHandler({AssistantUnavailableException.class})
-    public ProblemDetail asistenteNoDisponibleHandler(AssistantUnavailableException ex, HttpServletRequest request){
+    public ProblemDetail assistantUnavailableHandler(AssistantUnavailableException ex, HttpServletRequest request){
         return build(503, "Service Unavailable", ex.getMessage(), request);
     }
 
