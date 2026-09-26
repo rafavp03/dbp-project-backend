@@ -1,8 +1,9 @@
 package dbp.projectbackend.controllers;
 
-import dbp.projectbackend.dtos.AuthResponseDTO;
-import dbp.projectbackend.dtos.LoginDTO;
-import dbp.projectbackend.dtos.RegisterDTO;
+import dbp.projectbackend.dtos.request.LoginDTO;
+import dbp.projectbackend.dtos.request.RefreshTokenDTO;
+import dbp.projectbackend.dtos.request.RegisterDTO;
+import dbp.projectbackend.dtos.response.AuthResponseDTO;
 import dbp.projectbackend.services.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/v1/auth")
 public class AuthController {
 
     private final AuthService service;
@@ -23,6 +24,11 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody RegisterDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.register(dto));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponseDTO> refresh(@Valid @RequestBody RefreshTokenDTO dto) {
+        return ResponseEntity.ok(service.refresh(dto));
     }
 
     @PostMapping("/login")

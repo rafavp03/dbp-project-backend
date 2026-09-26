@@ -2,6 +2,7 @@ package dbp.projectbackend.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import dbp.projectbackend.enums.Role;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -20,7 +21,10 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(name = "usuarios")
+@Table(
+    name = "usuarios",
+    indexes = @Index(name = "idx_usuarios_empresa", columnList = "empresa_id")
+)
 public class UserModel implements UserDetails {
 
     public UserModel(String nombre, String email, String password, Role role, EnterpriseModel empresa) {

@@ -71,7 +71,7 @@ public class ProductModel {
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("id")
     @JsonIgnoreProperties("producto")
-    private List<VarianteProductoModel> variantes = new ArrayList<>();
+    private List<ProductVariantModel> variantes = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
@@ -80,19 +80,19 @@ public class ProductModel {
         if (this.unidadMedida == null) this.unidadMedida = "UNIDAD";
     }
 
-    public void addVariante(VarianteProductoModel variante) {
+    public void addVariant(ProductVariantModel variante) {
         variantes.add(variante);
         variante.setProducto(this);
     }
 
-    public void removeVariante(VarianteProductoModel variante) {
+    public void removeVariant(ProductVariantModel variante) {
         variantes.remove(variante);
         variante.setProducto(null);
     }
 
-    public int getStockTotal() {
+    public int getTotalStock() {
         return variantes.stream()
-                .mapToInt(VarianteProductoModel::getStock)
+                .mapToInt(ProductVariantModel::getStock)
                 .sum();
     }
 

@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -13,7 +14,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -45,6 +45,27 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({InvalidOperationException.class})
     public ProblemDetail invalidOperationHandler(InvalidOperationException ex, HttpServletRequest request){
         return build(400, "Invalid Operation", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler({ObjectOptimisticLockingFailureException.class})
+    public ProblemDetail optimisticLockHandler(HttpServletRequest request){
+        return build(409, "Concurrent Modification",
+                "Otra operación modificó el mismo recurso al mismo tiempo. Vuelve a intentarlo.", request);
+    }
+
+    @ExceptionHandler({InvalidTokenException.class})
+    public ProblemDetail invalidTokenHandler(InvalidTokenException ex, HttpServletRequest request){
+        return build(401, "Unauthorized", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler({QueryLimitExceededException.class})
+    public ProblemDetail queryLimitHandler(QueryLimitExceededException ex, HttpServletRequest request){
+        return build(429, "Too Many Requests", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler({AssistantUnavailableException.class})
+    public ProblemDetail assistantUnavailableHandler(AssistantUnavailableException ex, HttpServletRequest request){
+        return build(503, "Service Unavailable", ex.getMessage(), request);
     }
 
     @ExceptionHandler({ForbiddenException.class})

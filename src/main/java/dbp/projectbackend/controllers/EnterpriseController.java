@@ -1,7 +1,7 @@
 package dbp.projectbackend.controllers;
 
-import dbp.projectbackend.dtos.EnterpriseDTO;
-import dbp.projectbackend.dtos.EnterpriseResponseDTO;
+import dbp.projectbackend.dtos.request.EnterpriseDTO;
+import dbp.projectbackend.dtos.response.EnterpriseResponseDTO;
 import dbp.projectbackend.services.EnterpriseService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +13,7 @@ import java.net.URI;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/enterprise")
+@RequestMapping("/api/v1/enterprises")
 public class EnterpriseController {
     private final EnterpriseService service;
 

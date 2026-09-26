@@ -1,10 +1,11 @@
 package dbp.projectbackend.services;
 
-import dbp.projectbackend.dtos.ProductDTO;
-import dbp.projectbackend.dtos.ProductResponseDTO;
+import dbp.projectbackend.dtos.request.ProductDTO;
+import dbp.projectbackend.dtos.request.ProductPatchDTO;
+import dbp.projectbackend.dtos.response.ProductResponseDTO;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
-import dbp.projectbackend.exceptions.ResourceNotFoundException;
 import dbp.projectbackend.exceptions.ForbiddenException;
+import dbp.projectbackend.exceptions.ResourceNotFoundException;
 import dbp.projectbackend.models.CategoryModel;
 import dbp.projectbackend.models.EnterpriseModel;
 import dbp.projectbackend.models.ProductModel;
@@ -32,7 +33,7 @@ public class ProductService {
             throw new DuplicateResourceException("Ya existe un producto con código \"" + dto.codigo() + "\" en esta empresa.");
         }
 
-        CategoryModel categoria = resolveCategoria(empresa, dto.categoriaId());
+        CategoryModel categoria = resolveCategory(empresa, dto.categoriaId());
 
         ProductModel newProduct = new ProductModel(dto.codigo(), dto.nombre(), dto.precioVenta(), empresa);
         newProduct.setDescripcion(dto.descripcion());
@@ -69,7 +70,7 @@ public class ProductService {
             throw new DuplicateResourceException("Ya existe un producto con código \"" + dto.codigo() + "\" en esta empresa.");
         }
 
-        CategoryModel categoria = resolveCategoria(currentUser.getEmpresa(), dto.categoriaId());
+        CategoryModel categoria = resolveCategory(currentUser.getEmpresa(), dto.categoriaId());
 
         product.setCodigo(dto.codigo());
         product.setNombre(dto.nombre());
@@ -85,13 +86,37 @@ public class ProductService {
     }
 
     @Transactional
+    public ProductResponseDTO patchProduct(UserModel currentUser, Long id, ProductPatchDTO dto) {
+        ProductModel product = findOwnedProduct(currentUser, id);
+
+        if (dto.codigo() != null) {
+            if (!product.getCodigo().equals(dto.codigo())
+                    && productRepository.existsByEmpresaIdAndCodigo(currentUser.getEmpresa().getId(), dto.codigo())) {
+                throw new DuplicateResourceException(
+                        "Ya existe un producto con código \"" + dto.codigo() + "\" en esta empresa.");
+            }
+            product.setCodigo(dto.codigo());
+        }
+        if (dto.nombre() != null) product.setNombre(dto.nombre());
+        if (dto.descripcion() != null) product.setDescripcion(dto.descripcion());
+        if (dto.unidadMedida() != null) product.setUnidadMedida(dto.unidadMedida());
+        if (dto.precioCompra() != null) product.setPrecioCompra(dto.precioCompra());
+        if (dto.precioVenta() != null) product.setPrecioVenta(dto.precioVenta());
+        if (dto.categoriaId() != null) {
+            product.setCategoria(resolveCategory(currentUser.getEmpresa(), dto.categoriaId()));
+        }
+
+        return toDTO(productRepository.save(product));
+    }
+
+    @Transactional
     public void deactivateProduct(UserModel currentUser, Long id) {
         ProductModel product = findOwnedProduct(currentUser, id);
         product.setActivo(false);
         productRepository.save(product);
     }
 
-    private CategoryModel resolveCategoria(EnterpriseModel empresa, Long categoriaId) {
+    private CategoryModel resolveCategory(EnterpriseModel empresa, Long categoriaId) {
         if (categoriaId == null) return null;
 
         CategoryModel categoria = categoryRepository.findById(categoriaId)
@@ -126,7 +151,7 @@ public class ProductService {
                 product.getCategoria() != null ? product.getCategoria().getId() : null,
                 product.getCategoria() != null ? product.getCategoria().getNombre() : null,
                 product.getEmpresa().getId(),
-                product.getStockTotal()
+                product.getTotalStock()
         );
     }
 }

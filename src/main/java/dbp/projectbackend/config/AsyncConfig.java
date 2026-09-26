@@ -9,10 +9,10 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @EnableAsync
 public class AsyncConfig {
 
-    public static final String NOTIFICACIONES_EXECUTOR = "notificacionesExecutor";
+    public static final String NOTIFICATIONS_EXECUTOR = "notificationsExecutor";
 
-    @Bean(name = NOTIFICACIONES_EXECUTOR)
-    public ThreadPoolTaskExecutor notificacionesExecutor() {
+    @Bean(name = NOTIFICATIONS_EXECUTOR)
+    public ThreadPoolTaskExecutor notificationsExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(2);
         executor.setMaxPoolSize(5);

@@ -1,7 +1,7 @@
 package dbp.projectbackend.controllers;
 
-import dbp.projectbackend.dtos.UserDTO;
-import dbp.projectbackend.dtos.UserResponseDTO;
+import dbp.projectbackend.dtos.request.UserDTO;
+import dbp.projectbackend.dtos.response.UserResponseDTO;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.services.UserService;
 import jakarta.validation.Valid;
@@ -17,7 +17,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/api/v1/users")
 public class UserController {
 
     private final UserService service;

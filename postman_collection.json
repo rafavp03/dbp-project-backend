@@ -17,7 +17,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:8080",
+      "value": "http://localhost:8080/api/v1",
       "description": "URL base de la API"
     },
     {
@@ -29,6 +29,11 @@
       "key": "token",
       "value": "",
       "description": "JWT del ADMIN (se llena al registrar/login)"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "description": "Refresh token del ADMIN (se llena al registrar/login)"
     },
     {
       "key": "tokenEmpleado",
@@ -127,12 +132,12 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/enterprise",
+              "raw": "{{baseUrl}}/enterprises",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "enterprise"
+                "enterprises"
               ]
             },
             "description": "**Publico.** Registra un nuevo negocio (RUC de 11 digitos, unico). Es el primer paso: sin empresa no se puede crear el usuario administrador. Guarda `enterpriseId`.",
@@ -182,12 +187,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/enterprise",
+                  "raw": "{{baseUrl}}/enterprises",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "enterprise"
+                    "enterprises"
                   ]
                 },
                 "description": "**Publico.** Registra un nuevo negocio (RUC de 11 digitos, unico). Es el primer paso: sin empresa no se puede crear el usuario administrador. Guarda `enterpriseId`.",
@@ -226,12 +231,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/enterprise",
+                  "raw": "{{baseUrl}}/enterprises",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "enterprise"
+                    "enterprises"
                   ]
                 },
                 "description": "**Publico.** Registra un nuevo negocio (RUC de 11 digitos, unico). Es el primer paso: sin empresa no se puede crear el usuario administrador. Guarda `enterpriseId`.",
@@ -311,7 +316,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
-                  "if (pm.response.code < 300) pm.collectionVariables.set(\"token\", pm.response.json().token);"
+                  "if (pm.response.code < 300) { pm.collectionVariables.set(\"token\", pm.response.json().token); pm.collectionVariables.set(\"refreshToken\", pm.response.json().refreshToken); }"
                 ]
               }
             }
@@ -474,7 +479,7 @@
                 "login"
               ]
             },
-            "description": "**Publico.** Autentica con email y contraseña y devuelve un JWT valido por 24 h con el email, el rol y el empresaId. Actualiza `{{token}}`.",
+            "description": "**Publico.** Autentica con email y contraseña y devuelve un access token valido por 15 min y un refresh token de 7 dias con el email, el rol y el empresaId. Actualiza `{{token}}`.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{password}}\"\n}",
@@ -495,7 +500,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
-                  "if (pm.response.code < 300) pm.collectionVariables.set(\"token\", pm.response.json().token);"
+                  "if (pm.response.code < 300) { pm.collectionVariables.set(\"token\", pm.response.json().token); pm.collectionVariables.set(\"refreshToken\", pm.response.json().refreshToken); }"
                 ]
               }
             }
@@ -521,7 +526,7 @@
                     "login"
                   ]
                 },
-                "description": "**Publico.** Autentica con email y contraseña y devuelve un JWT valido por 24 h con el email, el rol y el empresaId. Actualiza `{{token}}`.",
+                "description": "**Publico.** Autentica con email y contraseña y devuelve un access token valido por 15 min y un refresh token de 7 dias con el email, el rol y el empresaId. Actualiza `{{token}}`.",
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{password}}\"\n}",
@@ -566,7 +571,7 @@
                     "login"
                   ]
                 },
-                "description": "**Publico.** Autentica con email y contraseña y devuelve un JWT valido por 24 h con el email, el rol y el empresaId. Actualiza `{{token}}`.",
+                "description": "**Publico.** Autentica con email y contraseña y devuelve un access token valido por 15 min y un refresh token de 7 dias con el email, el rol y el empresaId. Actualiza `{{token}}`.",
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{password}}\"\n}",
@@ -594,17 +599,68 @@
           ]
         },
         {
+          "name": "Renovar token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "**Publico.** Cambia un refresh token valido por un access token nuevo. El access token vive 15 minutos y el refresh 7 dias. Actualiza `{{token}}` y `{{refreshToken}}`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code < 300) {",
+                  "  pm.collectionVariables.set(\"token\", pm.response.json().token);",
+                  "  pm.collectionVariables.set(\"refreshToken\", pm.response.json().refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
           "name": "Mi usuario",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/user/me",
+              "raw": "{{baseUrl}}/users/me",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "user",
+                "users",
                 "me"
               ]
             },
@@ -628,12 +684,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/user/me",
+                  "raw": "{{baseUrl}}/users/me",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "user",
+                    "users",
                     "me"
                   ]
                 },
@@ -656,12 +712,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/user/me",
+                  "raw": "{{baseUrl}}/users/me",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "user",
+                    "users",
                     "me"
                   ]
                 },
@@ -686,12 +742,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/enterprise/{{enterpriseId}}",
+              "raw": "{{baseUrl}}/enterprises/{{enterpriseId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "enterprise",
+                "enterprises",
                 "{{enterpriseId}}"
               ]
             },
@@ -715,12 +771,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/enterprise/{{enterpriseId}}",
+                  "raw": "{{baseUrl}}/enterprises/{{enterpriseId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "enterprise",
+                    "enterprises",
                     "{{enterpriseId}}"
                   ]
                 },
@@ -756,12 +812,12 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/user",
+              "raw": "{{baseUrl}}/users",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "user"
+                "users"
               ]
             },
             "description": "El ADMIN crea la cuenta de un vendedor. El rol `EMPLEADO` puede registrar ventas e inventario, pero no ve reportes financieros.",
@@ -808,12 +864,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/user",
+                  "raw": "{{baseUrl}}/users",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "user"
+                    "users"
                   ]
                 },
                 "description": "El ADMIN crea la cuenta de un vendedor. El rol `EMPLEADO` puede registrar ventas e inventario, pero no ve reportes financieros.",
@@ -849,12 +905,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/user",
+                  "raw": "{{baseUrl}}/users",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "user"
+                    "users"
                   ]
                 },
                 "description": "El ADMIN crea la cuenta de un vendedor. El rol `EMPLEADO` puede registrar ventas e inventario, pero no ve reportes financieros.",
@@ -887,12 +943,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/user",
+              "raw": "{{baseUrl}}/users",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "user"
+                "users"
               ]
             },
             "description": "Usuarios de la empresa del ADMIN."
@@ -915,12 +971,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/user",
+                  "raw": "{{baseUrl}}/users",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "user"
+                    "users"
                   ]
                 },
                 "description": "Usuarios de la empresa del ADMIN."
@@ -991,12 +1047,12 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/user/{{empleadoId}}",
+              "raw": "{{baseUrl}}/users/{{empleadoId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "user",
+                "users",
                 "{{empleadoId}}"
               ]
             },
@@ -1020,12 +1076,12 @@
                 "method": "DELETE",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/user/{{empleadoId}}",
+                  "raw": "{{baseUrl}}/users/{{empleadoId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "user",
+                    "users",
                     "{{empleadoId}}"
                   ]
                 },
@@ -1048,12 +1104,12 @@
                 "method": "DELETE",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/user/{{empleadoId}}",
+                  "raw": "{{baseUrl}}/users/{{empleadoId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "user",
+                    "users",
                     "{{empleadoId}}"
                   ]
                 },
@@ -1068,7 +1124,7 @@
                   "value": "application/problem+json"
                 }
               ],
-              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Resource Not Found\",\n  \"status\": 404,\n  \"detail\": \"Usuario con id 99 no encontrado.\",\n  \"instance\": \"/user/99\",\n  \"timestamp\": \"2026-09-25T18:30:00Z\"\n}"
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Resource Not Found\",\n  \"status\": 404,\n  \"detail\": \"Usuario con id 99 no encontrado.\",\n  \"instance\": \"/users/99\",\n  \"timestamp\": \"2026-09-25T18:30:00Z\"\n}"
             }
           ]
         }
@@ -1089,12 +1145,12 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/category",
+              "raw": "{{baseUrl}}/categories",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "category"
+                "categories"
               ]
             },
             "description": "Agrupa productos (Polos, Jeans, Casacas). El nombre es unico por empresa. Permite reportes por categoria.",
@@ -1132,12 +1188,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/category",
+                  "raw": "{{baseUrl}}/categories",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "category"
+                    "categories"
                   ]
                 },
                 "description": "Agrupa productos (Polos, Jeans, Casacas). El nombre es unico por empresa. Permite reportes por categoria.",
@@ -1173,12 +1229,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/category",
+                  "raw": "{{baseUrl}}/categories",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "category"
+                    "categories"
                   ]
                 },
                 "description": "Agrupa productos (Polos, Jeans, Casacas). El nombre es unico por empresa. Permite reportes por categoria.",
@@ -1211,12 +1267,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/category",
+              "raw": "{{baseUrl}}/categories",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "category"
+                "categories"
               ]
             },
             "description": "Categorias activas de la empresa."
@@ -1239,12 +1295,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/category",
+                  "raw": "{{baseUrl}}/categories",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "category"
+                    "categories"
                   ]
                 },
                 "description": "Categorias activas de la empresa."
@@ -1268,12 +1324,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/category/{{categoriaId}}",
+              "raw": "{{baseUrl}}/categories/{{categoriaId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "category",
+                "categories",
                 "{{categoriaId}}"
               ]
             },
@@ -1297,12 +1353,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/category/{{categoriaId}}",
+                  "raw": "{{baseUrl}}/categories/{{categoriaId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "category",
+                    "categories",
                     "{{categoriaId}}"
                   ]
                 },
@@ -1325,12 +1381,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/category/{{categoriaId}}",
+                  "raw": "{{baseUrl}}/categories/{{categoriaId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "category",
+                    "categories",
                     "{{categoriaId}}"
                   ]
                 },
@@ -1345,7 +1401,7 @@
                   "value": "application/problem+json"
                 }
               ],
-              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Resource Not Found\",\n  \"status\": 404,\n  \"detail\": \"Categoria con id 99 no encontrada.\",\n  \"instance\": \"/category/99\",\n  \"timestamp\": \"2026-09-25T18:30:00Z\"\n}"
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Resource Not Found\",\n  \"status\": 404,\n  \"detail\": \"Categoria con id 99 no encontrada.\",\n  \"instance\": \"/categories/99\",\n  \"timestamp\": \"2026-09-25T18:30:00Z\"\n}"
             }
           ]
         },
@@ -1360,12 +1416,12 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/category/{{categoriaId}}",
+              "raw": "{{baseUrl}}/categories/{{categoriaId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "category",
+                "categories",
                 "{{categoriaId}}"
               ]
             },
@@ -1403,12 +1459,12 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/product",
+              "raw": "{{baseUrl}}/products",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "product"
+                "products"
               ]
             },
             "description": "Registra un modelo de prenda con su **costo** (precioCompra) y **precio de lista** (precioVenta). Ambos se copian en cada venta para calcular la ganancia y el descuento reales.",
@@ -1446,12 +1502,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/product",
+                  "raw": "{{baseUrl}}/products",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "product"
+                    "products"
                   ]
                 },
                 "description": "Registra un modelo de prenda con su **costo** (precioCompra) y **precio de lista** (precioVenta). Ambos se copian en cada venta para calcular la ganancia y el descuento reales.",
@@ -1487,12 +1543,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/product",
+                  "raw": "{{baseUrl}}/products",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "product"
+                    "products"
                   ]
                 },
                 "description": "Registra un modelo de prenda con su **costo** (precioCompra) y **precio de lista** (precioVenta). Ambos se copian en cada venta para calcular la ganancia y el descuento reales.",
@@ -1525,12 +1581,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/product?soloActivos=true",
+              "raw": "{{baseUrl}}/products?soloActivos=true",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "product"
+                "products"
               ],
               "query": [
                 {
@@ -1559,12 +1615,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/product?soloActivos=true",
+                  "raw": "{{baseUrl}}/products?soloActivos=true",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "product"
+                    "products"
                   ],
                   "query": [
                     {
@@ -1594,12 +1650,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/product/{{productoId}}",
+              "raw": "{{baseUrl}}/products/{{productoId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "product",
+                "products",
                 "{{productoId}}"
               ]
             },
@@ -1623,12 +1679,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/product/{{productoId}}",
+                  "raw": "{{baseUrl}}/products/{{productoId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "product",
+                    "products",
                     "{{productoId}}"
                   ]
                 },
@@ -1651,12 +1707,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/product/{{productoId}}",
+                  "raw": "{{baseUrl}}/products/{{productoId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "product",
+                    "products",
                     "{{productoId}}"
                   ]
                 },
@@ -1671,7 +1727,7 @@
                   "value": "application/problem+json"
                 }
               ],
-              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Unauthorized\",\n  \"status\": 403,\n  \"detail\": \"No tienes acceso a este producto.\",\n  \"instance\": \"/product/99\",\n  \"timestamp\": \"2026-09-25T18:30:00Z\"\n}"
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Unauthorized\",\n  \"status\": 403,\n  \"detail\": \"No tienes acceso a este producto.\",\n  \"instance\": \"/products/99\",\n  \"timestamp\": \"2026-09-25T18:30:00Z\"\n}"
             }
           ]
         },
@@ -1686,12 +1742,12 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/product/{{productoId}}",
+              "raw": "{{baseUrl}}/products/{{productoId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "product",
+                "products",
                 "{{productoId}}"
               ]
             },
@@ -1729,14 +1785,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/product/{{productoId}}/variantes",
+              "raw": "{{baseUrl}}/products/{{productoId}}/variants",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "product",
+                "products",
                 "{{productoId}}",
-                "variantes"
+                "variants"
               ]
             },
             "description": "Crea una combinacion talla + color. El `stockMinimo` define cuando la variante aparece en *stock bajo*. Nace con stock 0; sube con compras o entradas.",
@@ -1774,14 +1830,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/product/{{productoId}}/variantes",
+                  "raw": "{{baseUrl}}/products/{{productoId}}/variants",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "product",
+                    "products",
                     "{{productoId}}",
-                    "variantes"
+                    "variants"
                   ]
                 },
                 "description": "Crea una combinacion talla + color. El `stockMinimo` define cuando la variante aparece en *stock bajo*. Nace con stock 0; sube con compras o entradas.",
@@ -1817,14 +1873,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/product/{{productoId}}/variantes",
+                  "raw": "{{baseUrl}}/products/{{productoId}}/variants",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "product",
+                    "products",
                     "{{productoId}}",
-                    "variantes"
+                    "variants"
                   ]
                 },
                 "description": "Crea una combinacion talla + color. El `stockMinimo` define cuando la variante aparece en *stock bajo*. Nace con stock 0; sube con compras o entradas.",
@@ -1847,7 +1903,7 @@
                   "value": "application/problem+json"
                 }
               ],
-              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Duplicate Resource\",\n  \"status\": 409,\n  \"detail\": \"Ya existe la variante M - Negro para este producto.\",\n  \"instance\": \"/product/1/variantes\",\n  \"timestamp\": \"2026-09-25T18:30:00Z\"\n}"
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Duplicate Resource\",\n  \"status\": 409,\n  \"detail\": \"Ya existe la variante M - Negro para este producto.\",\n  \"instance\": \"/products/1/variantes\",\n  \"timestamp\": \"2026-09-25T18:30:00Z\"\n}"
             }
           ]
         },
@@ -1862,14 +1918,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/product/{{productoId}}/variantes",
+              "raw": "{{baseUrl}}/products/{{productoId}}/variants",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "product",
+                "products",
                 "{{productoId}}",
-                "variantes"
+                "variants"
               ]
             },
             "description": "Segunda variante del mismo modelo.",
@@ -1902,14 +1958,14 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/product/{{productoId}}/variantes",
+              "raw": "{{baseUrl}}/products/{{productoId}}/variants",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "product",
+                "products",
                 "{{productoId}}",
-                "variantes"
+                "variants"
               ]
             },
             "description": "Todas las tallas y colores de un producto con su stock."
@@ -1932,14 +1988,14 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/product/{{productoId}}/variantes",
+                  "raw": "{{baseUrl}}/products/{{productoId}}/variants",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "product",
+                    "products",
                     "{{productoId}}",
-                    "variantes"
+                    "variants"
                   ]
                 },
                 "description": "Todas las tallas y colores de un producto con su stock."
@@ -1963,12 +2019,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/variante/{{varianteId}}",
+              "raw": "{{baseUrl}}/variants/{{varianteId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "variante",
+                "variants",
                 "{{varianteId}}"
               ]
             },
@@ -1992,12 +2048,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/variante/{{varianteId}}",
+                  "raw": "{{baseUrl}}/variants/{{varianteId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "variante",
+                    "variants",
                     "{{varianteId}}"
                   ]
                 },
@@ -2027,12 +2083,12 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/variante/{{varianteId}}",
+              "raw": "{{baseUrl}}/variants/{{varianteId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "variante",
+                "variants",
                 "{{varianteId}}"
               ]
             },
@@ -2065,12 +2121,12 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/variante/{{varianteId2}}",
+              "raw": "{{baseUrl}}/variants/{{varianteId2}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "variante",
+                "variants",
                 "{{varianteId2}}"
               ]
             },
@@ -2094,12 +2150,12 @@
                 "method": "DELETE",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/variante/{{varianteId2}}",
+                  "raw": "{{baseUrl}}/variants/{{varianteId2}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "variante",
+                    "variants",
                     "{{varianteId2}}"
                   ]
                 },
@@ -2119,17 +2175,63 @@
           ]
         },
         {
+          "name": "Editar producto parcialmente (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productoId}}"
+              ]
+            },
+            "description": "Actualizacion parcial: solo se aplican los campos que se envian, el resto queda igual. Util para cambiar solo el precio sin reenviar todo el producto. Si se manda `codigo` y ya existe otro con ese codigo en la empresa, responde 409."
+            ,
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"precioVenta\": 79.90\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Solo cambio el precio\", () => pm.expect(pm.response.json().precioVenta).to.eql(79.9));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
           "name": "Desactivar producto (ADMIN)",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/product/{{productoId}}",
+              "raw": "{{baseUrl}}/products/{{productoId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "product",
+                "products",
                 "{{productoId}}"
               ]
             },
@@ -2153,12 +2255,12 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/category/{{categoriaId}}",
+              "raw": "{{baseUrl}}/categories/{{categoriaId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "category",
+                "categories",
                 "{{categoriaId}}"
               ]
             },
@@ -2193,18 +2295,18 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/supplier",
+              "raw": "{{baseUrl}}/suppliers",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "supplier"
+                "suppliers"
               ]
             },
             "description": "Registra un proveedor y lo vincula a la empresa. Si el RUC ya existe, reutiliza el proveedor y solo lo vincula.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"ruc\": \"{{rucProveedor}}\",\n  \"razonSocial\": \"Textil San Pedro {{rucProveedor}} EIRL\",\n  \"telefono\": 987654321,\n  \"correo\": \"ventas@textilsanpedro.pe\"\n}",
+              "raw": "{\n  \"ruc\": \"{{rucProveedor}}\",\n  \"razonSocial\": \"Textil San Pedro {{rucProveedor}} EIRL\",\n  \"telefono\": \"987654321\",\n  \"correo\": \"ventas@textilsanpedro.pe\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2245,18 +2347,18 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/supplier",
+                  "raw": "{{baseUrl}}/suppliers",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "supplier"
+                    "suppliers"
                   ]
                 },
                 "description": "Registra un proveedor y lo vincula a la empresa. Si el RUC ya existe, reutiliza el proveedor y solo lo vincula.",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"ruc\": \"{{rucProveedor}}\",\n  \"razonSocial\": \"Textil San Pedro {{rucProveedor}} EIRL\",\n  \"telefono\": 987654321,\n  \"correo\": \"ventas@textilsanpedro.pe\"\n}",
+                  "raw": "{\n  \"ruc\": \"{{rucProveedor}}\",\n  \"razonSocial\": \"Textil San Pedro {{rucProveedor}} EIRL\",\n  \"telefono\": \"987654321\",\n  \"correo\": \"ventas@textilsanpedro.pe\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2273,7 +2375,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": 1,\n  \"ruc\": \"20601234567\",\n  \"razonSocial\": \"Textil San Pedro EIRL\",\n  \"telefono\": 987654321,\n  \"correo\": \"ventas@textilsanpedro.pe\"\n}"
+              "body": "{\n  \"id\": 1,\n  \"ruc\": \"20601234567\",\n  \"razonSocial\": \"Textil San Pedro EIRL\",\n  \"telefono\": \"987654321\",\n  \"correo\": \"ventas@textilsanpedro.pe\"\n}"
             }
           ]
         },
@@ -2283,12 +2385,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/supplier",
+              "raw": "{{baseUrl}}/suppliers",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "supplier"
+                "suppliers"
               ]
             },
             "description": "Proveedores de la empresa."
@@ -2311,12 +2413,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/supplier",
+                  "raw": "{{baseUrl}}/suppliers",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "supplier"
+                    "suppliers"
                   ]
                 },
                 "description": "Proveedores de la empresa."
@@ -2330,7 +2432,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n  {\n    \"id\": 1,\n    \"ruc\": \"20601234567\",\n    \"razonSocial\": \"Textil San Pedro EIRL\",\n    \"telefono\": 987654321,\n    \"correo\": \"ventas@textilsanpedro.pe\"\n  }\n]"
+              "body": "[\n  {\n    \"id\": 1,\n    \"ruc\": \"20601234567\",\n    \"razonSocial\": \"Textil San Pedro EIRL\",\n    \"telefono\": \"987654321\",\n    \"correo\": \"ventas@textilsanpedro.pe\"\n  }\n]"
             }
           ]
         },
@@ -2340,12 +2442,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/supplier/{{proveedorId}}",
+              "raw": "{{baseUrl}}/suppliers/{{proveedorId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "supplier",
+                "suppliers",
                 "{{proveedorId}}"
               ]
             },
@@ -2374,18 +2476,18 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/client",
+              "raw": "{{baseUrl}}/clients",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "client"
+                "clients"
               ]
             },
             "description": "Registra un cliente frecuente (DNI de 8 o RUC de 11 digitos, unico por empresa).",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"documento\": \"{{dni}}\",\n  \"nombre\": \"Maria Torres\",\n  \"telefono\": 912345678,\n  \"correo\": \"maria@gmail.com\",\n  \"direccion\": \"Jr. Gamarra 123, La Victoria\"\n}",
+              "raw": "{\n  \"documento\": \"{{dni}}\",\n  \"nombre\": \"Maria Torres\",\n  \"telefono\": \"912345678\",\n  \"correo\": \"maria@gmail.com\",\n  \"direccion\": \"Jr. Gamarra 123, La Victoria\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2426,18 +2528,18 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/client",
+                  "raw": "{{baseUrl}}/clients",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "client"
+                    "clients"
                   ]
                 },
                 "description": "Registra un cliente frecuente (DNI de 8 o RUC de 11 digitos, unico por empresa).",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"documento\": \"{{dni}}\",\n  \"nombre\": \"Maria Torres\",\n  \"telefono\": 912345678,\n  \"correo\": \"maria@gmail.com\",\n  \"direccion\": \"Jr. Gamarra 123, La Victoria\"\n}",
+                  "raw": "{\n  \"documento\": \"{{dni}}\",\n  \"nombre\": \"Maria Torres\",\n  \"telefono\": \"912345678\",\n  \"correo\": \"maria@gmail.com\",\n  \"direccion\": \"Jr. Gamarra 123, La Victoria\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2454,7 +2556,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": 1,\n  \"documento\": \"45678912\",\n  \"nombre\": \"Maria Torres\",\n  \"telefono\": 912345678,\n  \"correo\": \"maria@gmail.com\",\n  \"direccion\": \"Jr. Gamarra 123, La Victoria\",\n  \"empresaId\": 1\n}"
+              "body": "{\n  \"id\": 1,\n  \"documento\": \"45678912\",\n  \"nombre\": \"Maria Torres\",\n  \"telefono\": \"912345678\",\n  \"correo\": \"maria@gmail.com\",\n  \"direccion\": \"Jr. Gamarra 123, La Victoria\",\n  \"empresaId\": 1\n}"
             },
             {
               "name": "400 Documento invalido",
@@ -2467,18 +2569,18 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/client",
+                  "raw": "{{baseUrl}}/clients",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "client"
+                    "clients"
                   ]
                 },
                 "description": "Registra un cliente frecuente (DNI de 8 o RUC de 11 digitos, unico por empresa).",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"documento\": \"{{dni}}\",\n  \"nombre\": \"Maria Torres\",\n  \"telefono\": 912345678,\n  \"correo\": \"maria@gmail.com\",\n  \"direccion\": \"Jr. Gamarra 123, La Victoria\"\n}",
+                  "raw": "{\n  \"documento\": \"{{dni}}\",\n  \"nombre\": \"Maria Torres\",\n  \"telefono\": \"912345678\",\n  \"correo\": \"maria@gmail.com\",\n  \"direccion\": \"Jr. Gamarra 123, La Victoria\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2505,12 +2607,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/client",
+              "raw": "{{baseUrl}}/clients",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "client"
+                "clients"
               ]
             },
             "description": "Clientes de la empresa."
@@ -2533,12 +2635,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/client",
+                  "raw": "{{baseUrl}}/clients",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "client"
+                    "clients"
                   ]
                 },
                 "description": "Clientes de la empresa."
@@ -2552,7 +2654,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n  {\n    \"id\": 1,\n    \"documento\": \"45678912\",\n    \"nombre\": \"Maria Torres\",\n    \"telefono\": 912345678,\n    \"correo\": \"maria@gmail.com\",\n    \"direccion\": \"Jr. Gamarra 123, La Victoria\",\n    \"empresaId\": 1\n  }\n]"
+              "body": "[\n  {\n    \"id\": 1,\n    \"documento\": \"45678912\",\n    \"nombre\": \"Maria Torres\",\n    \"telefono\": \"912345678\",\n    \"correo\": \"maria@gmail.com\",\n    \"direccion\": \"Jr. Gamarra 123, La Victoria\",\n    \"empresaId\": 1\n  }\n]"
             }
           ]
         },
@@ -2562,12 +2664,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/client/{{clienteId}}",
+              "raw": "{{baseUrl}}/clients/{{clienteId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "client",
+                "clients",
                 "{{clienteId}}"
               ]
             },
@@ -2596,19 +2698,19 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/client/{{clienteId}}",
+              "raw": "{{baseUrl}}/clients/{{clienteId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "client",
+                "clients",
                 "{{clienteId}}"
               ]
             },
             "description": "Actualiza los datos del cliente.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"documento\": \"{{dni}}\",\n  \"nombre\": \"Maria Torres Rojas\",\n  \"telefono\": 912345678,\n  \"correo\": \"maria@gmail.com\",\n  \"direccion\": \"Jr. Gamarra 123, La Victoria\"\n}",
+              "raw": "{\n  \"documento\": \"{{dni}}\",\n  \"nombre\": \"Maria Torres Rojas\",\n  \"telefono\": \"912345678\",\n  \"correo\": \"maria@gmail.com\",\n  \"direccion\": \"Jr. Gamarra 123, La Victoria\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2634,12 +2736,12 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/client/{{clienteId}}",
+              "raw": "{{baseUrl}}/clients/{{clienteId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "client",
+                "clients",
                 "{{clienteId}}"
               ]
             },
@@ -2674,12 +2776,12 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/orden-compra",
+              "raw": "{{baseUrl}}/purchase-orders",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "orden-compra"
+                "purchase-orders"
               ]
             },
             "description": "Registra la mercaderia comprada a un proveedor. Calcula el total y suma el stock de cada variante.",
@@ -2717,12 +2819,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/orden-compra",
+                  "raw": "{{baseUrl}}/purchase-orders",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "orden-compra"
+                    "purchase-orders"
                   ]
                 },
                 "description": "Registra la mercaderia comprada a un proveedor. Calcula el total y suma el stock de cada variante.",
@@ -2758,12 +2860,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/orden-compra",
+                  "raw": "{{baseUrl}}/purchase-orders",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "orden-compra"
+                    "purchase-orders"
                   ]
                 },
                 "description": "Registra la mercaderia comprada a un proveedor. Calcula el total y suma el stock de cada variante.",
@@ -2796,12 +2898,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/orden-compra/{{ordenCompraId}}",
+              "raw": "{{baseUrl}}/purchase-orders/{{ordenCompraId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "orden-compra",
+                "purchase-orders",
                 "{{ordenCompraId}}"
               ]
             },
@@ -2825,12 +2927,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/orden-compra/{{ordenCompraId}}",
+                  "raw": "{{baseUrl}}/purchase-orders/{{ordenCompraId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "orden-compra",
+                    "purchase-orders",
                     "{{ordenCompraId}}"
                   ]
                 },
@@ -2860,12 +2962,12 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/orden-venta",
+              "raw": "{{baseUrl}}/sales-orders",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "orden-venta"
+                "sales-orders"
               ]
             },
             "description": "Venta tipica de mostrador. Sin `precioUnitario` se cobra el precio de lista. El medio de pago y el canal alimentan los reportes.",
@@ -2903,12 +3005,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/orden-venta",
+                  "raw": "{{baseUrl}}/sales-orders",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "orden-venta"
+                    "sales-orders"
                   ]
                 },
                 "description": "Venta tipica de mostrador. Sin `precioUnitario` se cobra el precio de lista. El medio de pago y el canal alimentan los reportes.",
@@ -2946,12 +3048,12 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/orden-venta",
+              "raw": "{{baseUrl}}/sales-orders",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "orden-venta"
+                "sales-orders"
               ]
             },
             "description": "Venta con precio regateado (22 en lugar de 25). La diferencia queda registrada como **descuento** para los reportes.",
@@ -2988,12 +3090,12 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/orden-venta",
+              "raw": "{{baseUrl}}/sales-orders",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "orden-venta"
+                "sales-orders"
               ]
             },
             "description": "Prueba de regla de negocio: no se puede vender mas de lo que hay. Responde 409 y no descuenta nada.",
@@ -3030,12 +3132,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/orden-venta",
+                  "raw": "{{baseUrl}}/sales-orders",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "orden-venta"
+                    "sales-orders"
                   ]
                 },
                 "description": "Prueba de regla de negocio: no se puede vender mas de lo que hay. Responde 409 y no descuenta nada.",
@@ -3068,12 +3170,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/orden-venta/{{ordenVentaId}}",
+              "raw": "{{baseUrl}}/sales-orders/{{ordenVentaId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "orden-venta",
+                "sales-orders",
                 "{{ordenVentaId}}"
               ]
             },
@@ -3097,12 +3199,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/orden-venta/{{ordenVentaId}}",
+                  "raw": "{{baseUrl}}/sales-orders/{{ordenVentaId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "orden-venta",
+                    "sales-orders",
                     "{{ordenVentaId}}"
                   ]
                 },
@@ -3138,13 +3240,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/stock/entrada",
+              "raw": "{{baseUrl}}/stock-movements/inbound",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "stock",
-                "entrada"
+                "stock-movements",
+                "inbound"
               ]
             },
             "description": "Ingreso de mercaderia sin orden de compra.",
@@ -3181,13 +3283,13 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/stock/entrada",
+                  "raw": "{{baseUrl}}/stock-movements/inbound",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "stock",
-                    "entrada"
+                    "stock-movements",
+                    "inbound"
                   ]
                 },
                 "description": "Ingreso de mercaderia sin orden de compra.",
@@ -3225,13 +3327,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/stock/salida",
+              "raw": "{{baseUrl}}/stock-movements/outbound",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "stock",
-                "salida"
+                "stock-movements",
+                "outbound"
               ]
             },
             "description": "Egreso sin venta (merma, prenda fallada).",
@@ -3268,13 +3370,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/stock/devolucion",
+              "raw": "{{baseUrl}}/stock-movements/returns",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "stock",
-                "devolucion"
+                "stock-movements",
+                "returns"
               ]
             },
             "description": "Un cliente devuelve o cambia una prenda: vuelve al stock.",
@@ -3311,13 +3413,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/stock/ajuste",
+              "raw": "{{baseUrl}}/stock-movements/adjustments",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "stock",
-                "ajuste"
+                "stock-movements",
+                "adjustments"
               ]
             },
             "description": "Fija el stock al valor contado fisicamente. Aqui deja S Blanco por debajo de su minimo.",
@@ -3349,13 +3451,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/stock/variante/{{varianteId}}",
+              "raw": "{{baseUrl}}/stock-movements/variants/{{varianteId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "stock",
-                "variante",
+                "stock-movements",
+                "variants",
                 "{{varianteId}}"
               ]
             },
@@ -3379,13 +3481,13 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/stock/variante/{{varianteId}}",
+                  "raw": "{{baseUrl}}/stock-movements/variants/{{varianteId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "stock",
-                    "variante",
+                    "stock-movements",
+                    "variants",
                     "{{varianteId}}"
                   ]
                 },
@@ -3410,13 +3512,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/stock/bajo",
+              "raw": "{{baseUrl}}/stock-movements/low-stock",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "stock",
-                "bajo"
+                "stock-movements",
+                "low-stock"
               ]
             },
             "description": "Variantes en su stock minimo o por debajo: lo que hay que reponer."
@@ -3445,13 +3547,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/reportes/resumen",
+              "raw": "{{baseUrl}}/reports/summary",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "reportes",
-                "resumen"
+                "reports",
+                "summary"
               ],
               "query": [
                 {
@@ -3488,13 +3590,13 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/reportes/resumen",
+                  "raw": "{{baseUrl}}/reports/summary",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "reportes",
-                    "resumen"
+                    "reports",
+                    "summary"
                   ],
                   "query": [
                     {
@@ -3532,13 +3634,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/reportes/top-productos?criterio=UNIDADES&limite=10",
+              "raw": "{{baseUrl}}/reports/top-products?criterio=UNIDADES&limite=10",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "reportes",
-                "top-productos"
+                "reports",
+                "top-products"
               ],
               "query": [
                 {
@@ -3571,13 +3673,13 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/reportes/top-productos?criterio=UNIDADES&limite=10",
+                  "raw": "{{baseUrl}}/reports/top-products?criterio=UNIDADES&limite=10",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "reportes",
-                    "top-productos"
+                    "reports",
+                    "top-products"
                   ],
                   "query": [
                     {
@@ -3611,13 +3713,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/reportes/top-productos?criterio=GANANCIA&limite=5",
+              "raw": "{{baseUrl}}/reports/top-products?criterio=GANANCIA&limite=5",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "reportes",
-                "top-productos"
+                "reports",
+                "top-products"
               ],
               "query": [
                 {
@@ -3650,13 +3752,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/reportes/ventas-agrupadas?por=MEDIO_PAGO",
+              "raw": "{{baseUrl}}/reports/grouped-sales?por=MEDIO_PAGO",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "reportes",
-                "ventas-agrupadas"
+                "reports",
+                "grouped-sales"
               ],
               "query": [
                 {
@@ -3685,13 +3787,13 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/reportes/ventas-agrupadas?por=MEDIO_PAGO",
+                  "raw": "{{baseUrl}}/reports/grouped-sales?por=MEDIO_PAGO",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "reportes",
-                    "ventas-agrupadas"
+                    "reports",
+                    "grouped-sales"
                   ],
                   "query": [
                     {
@@ -3721,13 +3823,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/reportes/ventas-agrupadas?por=CANAL",
+              "raw": "{{baseUrl}}/reports/grouped-sales?por=CANAL",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "reportes",
-                "ventas-agrupadas"
+                "reports",
+                "grouped-sales"
               ],
               "query": [
                 {
@@ -3756,13 +3858,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/reportes/ventas-agrupadas?por=CATEGORIA",
+              "raw": "{{baseUrl}}/reports/grouped-sales?por=CATEGORIA",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "reportes",
-                "ventas-agrupadas"
+                "reports",
+                "grouped-sales"
               ],
               "query": [
                 {
@@ -3791,13 +3893,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/reportes/ventas-agrupadas?por=DIA_SEMANA",
+              "raw": "{{baseUrl}}/reports/grouped-sales?por=DIA_SEMANA",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "reportes",
-                "ventas-agrupadas"
+                "reports",
+                "grouped-sales"
               ],
               "query": [
                 {
@@ -3826,13 +3928,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/reportes/ventas-agrupadas?por=HORA",
+              "raw": "{{baseUrl}}/reports/grouped-sales?por=HORA",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "reportes",
-                "ventas-agrupadas"
+                "reports",
+                "grouped-sales"
               ],
               "query": [
                 {
@@ -3861,13 +3963,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/reportes/stock-bajo",
+              "raw": "{{baseUrl}}/reports/low-stock",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "reportes",
-                "stock-bajo"
+                "reports",
+                "low-stock"
               ]
             },
             "description": "Version resumida para reportes."
@@ -3890,13 +3992,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/reportes/stock-parado?dias=60",
+              "raw": "{{baseUrl}}/reports/stale-stock?dias=60",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "reportes",
-                "stock-parado"
+                "reports",
+                "stale-stock"
               ],
               "query": [
                 {
@@ -3925,13 +4027,13 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/reportes/stock-parado?dias=60",
+                  "raw": "{{baseUrl}}/reports/stale-stock?dias=60",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "reportes",
-                    "stock-parado"
+                    "reports",
+                    "stale-stock"
                   ],
                   "query": [
                     {
@@ -3961,13 +4063,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/reportes/ventas-agrupadas?por=YAPEE",
+              "raw": "{{baseUrl}}/reports/grouped-sales?por=YAPEE",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "reportes",
-                "ventas-agrupadas"
+                "reports",
+                "grouped-sales"
               ],
               "query": [
                 {
@@ -3996,13 +4098,13 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/reportes/ventas-agrupadas?por=YAPEE",
+                  "raw": "{{baseUrl}}/reports/grouped-sales?por=YAPEE",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "reportes",
-                    "ventas-agrupadas"
+                    "reports",
+                    "grouped-sales"
                   ],
                   "query": [
                     {
@@ -4022,7 +4124,7 @@
                   "value": "application/problem+json"
                 }
               ],
-              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Invalid Parameter\",\n  \"status\": 400,\n  \"detail\": \"Valor invalido para el parametro 'por': YAPEE\",\n  \"instance\": \"/reportes/ventas-agrupadas\",\n  \"timestamp\": \"2026-09-25T18:30:00Z\"\n}"
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Invalid Parameter\",\n  \"status\": 400,\n  \"detail\": \"Valor invalido para el parametro 'por': YAPEE\",\n  \"instance\": \"/reports/ventas-agrupadas\",\n  \"timestamp\": \"2026-09-25T18:30:00Z\"\n}"
             }
           ]
         },
@@ -4032,13 +4134,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/reportes/resumen",
+              "raw": "{{baseUrl}}/reports/summary",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "reportes",
-                "resumen"
+                "reports",
+                "summary"
               ]
             },
             "description": "Prueba de autorizacion por rol: los reportes financieros son solo para ADMIN.",
@@ -4071,13 +4173,13 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/reportes/resumen",
+                  "raw": "{{baseUrl}}/reports/summary",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "reportes",
-                    "resumen"
+                    "reports",
+                    "summary"
                   ]
                 },
                 "description": "Prueba de autorizacion por rol: los reportes financieros son solo para ADMIN.",
@@ -4101,7 +4203,7 @@
                   "value": "application/problem+json"
                 }
               ],
-              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Forbidden\",\n  \"status\": 403,\n  \"detail\": \"No tienes permisos para realizar esta acción\",\n  \"instance\": \"/reportes/resumen\",\n  \"timestamp\": \"2026-09-25T18:30:00Z\"\n}"
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Forbidden\",\n  \"status\": 403,\n  \"detail\": \"No tienes permisos para realizar esta acción\",\n  \"instance\": \"/reports/resumen\",\n  \"timestamp\": \"2026-09-25T18:30:00Z\"\n}"
             }
           ]
         }
@@ -4122,12 +4224,12 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/asistente",
+              "raw": "{{baseUrl}}/assistant",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "asistente"
+                "assistant"
               ]
             },
             "description": "La IA consulta el resumen de ventas y explica el resultado.",
@@ -4164,12 +4266,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/asistente",
+                  "raw": "{{baseUrl}}/assistant",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "asistente"
+                    "assistant"
                   ]
                 },
                 "description": "La IA consulta el resumen de ventas y explica el resultado.",
@@ -4205,12 +4307,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/asistente",
+                  "raw": "{{baseUrl}}/assistant",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "asistente"
+                    "assistant"
                   ]
                 },
                 "description": "La IA consulta el resumen de ventas y explica el resultado.",
@@ -4246,12 +4348,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/asistente",
+                  "raw": "{{baseUrl}}/assistant",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "asistente"
+                    "assistant"
                   ]
                 },
                 "description": "La IA consulta el resumen de ventas y explica el resultado.",
@@ -4289,12 +4391,12 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/asistente",
+              "raw": "{{baseUrl}}/assistant",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "asistente"
+                "assistant"
               ]
             },
             "description": "Usa stock bajo y ranking de productos.",
@@ -4331,12 +4433,12 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/asistente",
+              "raw": "{{baseUrl}}/assistant",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "asistente"
+                "assistant"
               ]
             },
             "description": "Usa ventas agrupadas y el resumen.",
@@ -4373,12 +4475,12 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/asistente",
+              "raw": "{{baseUrl}}/assistant",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "asistente"
+                "assistant"
               ]
             },
             "description": "Usa stock parado.",
@@ -4415,12 +4517,12 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/asistente",
+              "raw": "{{baseUrl}}/assistant",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "asistente"
+                "assistant"
               ]
             },
             "description": "Prueba de seguridad: no existe herramienta para otra empresa, asi que solo responde con los datos del token.",
@@ -4457,12 +4559,12 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/asistente",
+              "raw": "{{baseUrl}}/assistant",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "asistente"
+                "assistant"
               ]
             },
             "description": "Debe responder que eso lo consulta el administrador (no tiene herramientas financieras).",
@@ -4509,12 +4611,12 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/asistente",
+              "raw": "{{baseUrl}}/assistant",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "asistente"
+                "assistant"
               ]
             },
             "description": "El empleado si puede consultar lo que hay que reponer.",
@@ -4556,13 +4658,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/asistente/historial",
+              "raw": "{{baseUrl}}/assistant/history",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "asistente",
-                "historial"
+                "assistant",
+                "history"
               ]
             },
             "description": "Ultimas 20 preguntas del usuario (solo las propias)."
@@ -4585,13 +4687,13 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/asistente/historial",
+                  "raw": "{{baseUrl}}/assistant/history",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "asistente",
-                    "historial"
+                    "assistant",
+                    "history"
                   ]
                 },
                 "description": "Ultimas 20 preguntas del usuario (solo las propias)."
@@ -4620,12 +4722,12 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/asistente",
+              "raw": "{{baseUrl}}/assistant",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "asistente"
+                "assistant"
               ]
             },
             "description": "Validacion: la pregunta es obligatoria (maximo 500 caracteres).",
@@ -4662,12 +4764,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/asistente",
+                  "raw": "{{baseUrl}}/assistant",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "asistente"
+                    "assistant"
                   ]
                 },
                 "description": "Validacion: la pregunta es obligatoria (maximo 500 caracteres).",
@@ -4705,12 +4807,12 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/asistente",
+              "raw": "{{baseUrl}}/assistant",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "asistente"
+                "assistant"
               ]
             },
             "description": "Sin JWT el acceso es rechazado.",
@@ -4750,12 +4852,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/asistente",
+                  "raw": "{{baseUrl}}/assistant",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "asistente"
+                    "assistant"
                   ]
                 },
                 "description": "Sin JWT el acceso es rechazado.",

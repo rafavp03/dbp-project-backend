@@ -1,7 +1,7 @@
 package dbp.projectbackend.controllers;
 
-import dbp.projectbackend.dtos.CategoryDTO;
-import dbp.projectbackend.dtos.CategoryResponseDTO;
+import dbp.projectbackend.dtos.request.CategoryDTO;
+import dbp.projectbackend.dtos.response.CategoryResponseDTO;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.services.CategoryService;
 import jakarta.validation.Valid;
@@ -17,7 +17,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/category")
+@RequestMapping("/api/v1/categories")
 public class CategoryController {
 
     private final CategoryService service;

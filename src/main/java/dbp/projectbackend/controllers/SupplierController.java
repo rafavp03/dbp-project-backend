@@ -1,7 +1,7 @@
 package dbp.projectbackend.controllers;
 
-import dbp.projectbackend.dtos.SupplierDTO;
-import dbp.projectbackend.dtos.SupplierResponseDTO;
+import dbp.projectbackend.dtos.request.SupplierDTO;
+import dbp.projectbackend.dtos.response.SupplierResponseDTO;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.services.SupplierService;
 import jakarta.validation.Valid;
@@ -17,7 +17,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/supplier")
+@RequestMapping("/api/v1/suppliers")
 public class SupplierController {
 
     private final SupplierService service;

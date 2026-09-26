@@ -1,8 +1,8 @@
 package dbp.projectbackend.services;
 
-import dbp.projectbackend.dtos.UserDTO;
-import dbp.projectbackend.dtos.UserResponseDTO;
-import dbp.projectbackend.events.UsuarioRegistradoEvent;
+import dbp.projectbackend.dtos.request.UserDTO;
+import dbp.projectbackend.dtos.response.UserResponseDTO;
+import dbp.projectbackend.events.UserRegisteredEvent;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.InvalidOperationException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
@@ -38,7 +38,7 @@ public class UserService {
         );
 
         UserModel guardado = userRepository.save(newUser);
-        eventPublisher.publishEvent(new UsuarioRegistradoEvent(
+        eventPublisher.publishEvent(new UserRegisteredEvent(
                 this, guardado.getNombre(), guardado.getEmail(), admin.getEmpresa().getRazonSocial(), guardado.getRole()));
 
         return toDTO(guardado);
