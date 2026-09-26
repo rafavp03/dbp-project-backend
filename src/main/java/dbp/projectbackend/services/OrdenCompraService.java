@@ -5,7 +5,6 @@ import dbp.projectbackend.dtos.DetalleOrdenCompraResponseDTO;
 import dbp.projectbackend.dtos.OrdenCompraDTO;
 import dbp.projectbackend.dtos.OrdenCompraResponseDTO;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
-import dbp.projectbackend.exceptions.ForbiddenException;
 import dbp.projectbackend.models.*;
 import dbp.projectbackend.repositories.MovimientoStockRepository;
 import dbp.projectbackend.repositories.OrdenCompraRepository;
@@ -63,7 +62,7 @@ public class OrdenCompraService {
                 .orElseThrow(() -> new ResourceNotFoundException("Orden de compra con id " + id + " no encontrada"));
 
         if (!orden.getEmpresa().getId().equals(currentUser.getEmpresa().getId())) {
-            throw new ForbiddenException("No tienes acceso a esta orden de compra");
+            throw new ResourceNotFoundException("Orden de compra con id " + id + " no encontrada");
         }
 
         return toDTO(orden);

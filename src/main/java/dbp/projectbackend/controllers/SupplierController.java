@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
@@ -25,9 +26,11 @@ public class SupplierController {
     @PostMapping
     public ResponseEntity<SupplierResponseDTO> createSupplier(@AuthenticationPrincipal UserModel user, @Valid @RequestBody SupplierDTO dto) {
         SupplierResponseDTO newSupplier = service.createSupplier(user, dto);
-        return ResponseEntity
-                .created(URI.create("/supplier/" + newSupplier.id()))
-                .body(newSupplier);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(newSupplier.id())
+                .toUri();
+        return ResponseEntity.created(location).body(newSupplier);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")

@@ -108,7 +108,7 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Producto con id " + id + " no encontrado."));
 
         if (!product.getEmpresa().getId().equals(currentUser.getEmpresa().getId())) {
-            throw new ForbiddenException("No tienes acceso a este producto.");
+            throw new ResourceNotFoundException("Producto con id " + id + " no encontrado.");
         }
         return product;
     }

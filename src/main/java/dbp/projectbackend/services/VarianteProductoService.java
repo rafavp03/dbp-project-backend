@@ -4,7 +4,6 @@ import dbp.projectbackend.dtos.VarianteProductoDTO;
 import dbp.projectbackend.dtos.VarianteProductoResponseDTO;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
-import dbp.projectbackend.exceptions.ForbiddenException;
 import dbp.projectbackend.models.ProductModel;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.models.VarianteProductoModel;
@@ -91,7 +90,7 @@ public class VarianteProductoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Producto con id " + productoId + " no encontrado."));
 
         if (!producto.getEmpresa().getId().equals(currentUser.getEmpresa().getId())) {
-            throw new ForbiddenException("No tienes acceso a este producto.");
+            throw new ResourceNotFoundException("Producto con id " + productoId + " no encontrado.");
         }
         return producto;
     }
@@ -101,7 +100,7 @@ public class VarianteProductoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Variante con id " + id + " no encontrada."));
 
         if (!variante.getProducto().getEmpresa().getId().equals(currentUser.getEmpresa().getId())) {
-            throw new ForbiddenException("No tienes acceso a esta variante.");
+            throw new ResourceNotFoundException("Variante con id " + id + " no encontrada.");
         }
         return variante;
     }

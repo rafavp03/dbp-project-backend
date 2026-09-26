@@ -5,7 +5,6 @@ import dbp.projectbackend.dtos.DetalleOrdenVentaResponseDTO;
 import dbp.projectbackend.dtos.OrdenVentaDTO;
 import dbp.projectbackend.dtos.OrdenVentaResponseDTO;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
-import dbp.projectbackend.exceptions.ForbiddenException;
 import dbp.projectbackend.models.*;
 import dbp.projectbackend.repositories.ClientRepository;
 import dbp.projectbackend.repositories.MovimientoStockRepository;
@@ -71,7 +70,7 @@ public class OrdenVentaService {
                 .orElseThrow(() -> new ResourceNotFoundException("Orden de venta con id " + id + " no encontrada"));
 
         if (!orden.getEmpresa().getId().equals(currentUser.getEmpresa().getId())) {
-            throw new ForbiddenException("No tienes acceso a esta orden de venta");
+            throw new ResourceNotFoundException("Orden de venta con id " + id + " no encontrada");
         }
 
         return toDTO(orden);

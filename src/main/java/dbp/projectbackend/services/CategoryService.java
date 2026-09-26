@@ -4,7 +4,6 @@ import dbp.projectbackend.dtos.CategoryDTO;
 import dbp.projectbackend.dtos.CategoryResponseDTO;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
-import dbp.projectbackend.exceptions.ForbiddenException;
 import dbp.projectbackend.models.CategoryModel;
 import dbp.projectbackend.models.EnterpriseModel;
 import dbp.projectbackend.models.UserModel;
@@ -74,7 +73,7 @@ public class CategoryService {
                 .orElseThrow(() -> new ResourceNotFoundException("Categoría con id " + id + " no encontrada."));
 
         if (!category.getEmpresa().getId().equals(currentUser.getEmpresa().getId())) {
-            throw new ForbiddenException("No tienes acceso a esta categoría.");
+            throw new ResourceNotFoundException("Categoría con id " + id + " no encontrada.");
         }
         return category;
     }

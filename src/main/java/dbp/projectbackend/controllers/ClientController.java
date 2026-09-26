@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
@@ -25,9 +26,11 @@ public class ClientController {
     @PostMapping
     public ResponseEntity<ClientResponseDTO> createClient(@AuthenticationPrincipal UserModel user, @Valid @RequestBody ClientDTO dto) {
         ClientResponseDTO newClient = service.createClient(user, dto);
-        return ResponseEntity
-                .created(URI.create("/client/"+newClient.id()))
-                .body(newClient);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(newClient.id())
+                .toUri();
+        return ResponseEntity.created(location).body(newClient);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")

@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
@@ -30,9 +31,11 @@ public class UserController {
     @PostMapping
     public ResponseEntity<UserResponseDTO> createUser(@AuthenticationPrincipal UserModel admin, @Valid @RequestBody UserDTO dto) {
         UserResponseDTO newUser = service.createUser(admin, dto);
-        return ResponseEntity
-                .created(URI.create("user/"+newUser.id()))
-                .body(newUser);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(newUser.id())
+                .toUri();
+        return ResponseEntity.created(location).body(newUser);
     }
 
     @PreAuthorize("hasRole('ADMIN')")

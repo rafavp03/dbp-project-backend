@@ -4,7 +4,6 @@ import dbp.projectbackend.dtos.ClientDTO;
 import dbp.projectbackend.dtos.ClientResponseDTO;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
-import dbp.projectbackend.exceptions.ForbiddenException;
 import dbp.projectbackend.models.ClientModel;
 import dbp.projectbackend.models.EnterpriseModel;
 import dbp.projectbackend.models.UserModel;
@@ -77,7 +76,7 @@ public class ClientService {
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente con id "+id+" no encontrado."));
 
         if (!client.getEmpresa().getId().equals(currentUser.getEmpresa().getId())) {
-            throw new ForbiddenException("No tienes acceso a este cliente.");
+            throw new ResourceNotFoundException("Cliente con id "+id+" no encontrado.");
         }
         return client;
     }

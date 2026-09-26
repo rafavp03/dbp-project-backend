@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
@@ -25,9 +26,11 @@ public class ProductController {
     @PostMapping
     public ResponseEntity<ProductResponseDTO> createProduct(@AuthenticationPrincipal UserModel user, @Valid @RequestBody ProductDTO dto) {
         ProductResponseDTO newProduct = service.createProduct(user, dto);
-        return ResponseEntity
-                .created(URI.create("/product/" + newProduct.id()))
-                .body(newProduct);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(newProduct.id())
+                .toUri();
+        return ResponseEntity.created(location).body(newProduct);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")
