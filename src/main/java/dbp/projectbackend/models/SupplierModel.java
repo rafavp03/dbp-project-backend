@@ -34,7 +34,7 @@ public class SupplierModel {
     private String razonSocial;
 
     @Column(unique = true)
-    private Integer telefono;
+    private String telefono;
 
     @Column(unique = true)
     private String correo;

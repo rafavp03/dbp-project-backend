@@ -12,7 +12,8 @@ public record ClientDTO(
         @NotBlank(message = "Nombre obligatorio")
         String nombre,
 
-        Integer telefono,
+        @Pattern(regexp = "\\+?\\d{6,15}", message = "Telefono debe tener entre 6 y 15 digitos, con + opcional")
+        String telefono,
 
         @Email(message = "Correo invalido")
         String correo,

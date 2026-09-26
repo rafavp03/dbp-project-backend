@@ -38,7 +38,7 @@ public class ClientModel {
     @Column(nullable=false)
     private String nombre;
 
-    private Integer telefono;
+    private String telefono;
 
     private String correo;
 
