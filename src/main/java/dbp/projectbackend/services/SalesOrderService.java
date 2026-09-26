@@ -34,29 +34,10 @@ public class SalesOrderService {
     @Transactional
     public SalesOrderResponseDTO createSalesOrder(UserModel currentUser, SalesOrderDTO dto){
         EnterpriseModel empresa = currentUser.getEmpresa();
+        SalesOrderModel ordenVenta = new SalesOrderModel(
+                empresa, resolveClient(empresa, dto.clienteId()), dto.medioPago(), dto.canal());
 
-        ClientModel cliente = null;
-        if (dto.clienteId() != null) {
-            cliente = clientRepository.findById(dto.clienteId())
-                    .filter(c -> c.getEmpresa().getId().equals(empresa.getId()))
-                    .orElseThrow(() -> new ResourceNotFoundException("Cliente con id " + dto.clienteId() + " no encontrado"));
-        }
-
-        SalesOrderModel ordenVenta = new SalesOrderModel(empresa, cliente, dto.medioPago(), dto.canal());
-        List<StockMovementModel> movimientos = new ArrayList<>();
-
-        for(SalesOrderLineDTO detalleDto : dto.detalles()){
-            ProductVariantModel variante = varianteRepository.findById(detalleDto.varianteId())
-                    .filter(v -> v.getProducto().getEmpresa().getId().equals(empresa.getId()))
-                    .orElseThrow(() -> new ResourceNotFoundException("Variante con id " + detalleDto.varianteId() + " no encontrada"));
-
-            BigDecimal precio = detalleDto.precioUnitario() != null
-                    ? detalleDto.precioUnitario()
-                    : variante.getProducto().getPrecioVenta();
-
-            ordenVenta.addLine(new SalesOrderLineModel(variante, detalleDto.cantidad(), precio));
-            movimientos.add(StockMovementModel.outbound(variante, detalleDto.cantidad(), "Venta"));
-        }
+        List<StockMovementModel> movimientos = buildLines(ordenVenta, empresa, dto.detalles());
 
         ordenVenta.recalculateTotal();
         ordenVenta.setEstado(OrderStatus.COMPLETADA);
@@ -65,10 +46,47 @@ public class SalesOrderService {
         movimientos.forEach(m -> m.setOrdenVenta(guardada));
         movimientoStockRepository.saveAll(movimientos);
 
+        publishSaleRegistered(guardada, empresa, movimientos);
+        return toDTO(guardada);
+    }
+
+    private ClientModel resolveClient(EnterpriseModel empresa, Long clienteId) {
+        if (clienteId == null) {
+            return null;
+        }
+        return clientRepository.findById(clienteId)
+                .filter(c -> c.getEmpresa().getId().equals(empresa.getId()))
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente con id " + clienteId + " no encontrado"));
+    }
+
+    private List<StockMovementModel> buildLines(SalesOrderModel ordenVenta, EnterpriseModel empresa,
+                                                List<SalesOrderLineDTO> detalles) {
+        List<StockMovementModel> movimientos = new ArrayList<>();
+        for (SalesOrderLineDTO detalleDto : detalles) {
+            ProductVariantModel variante = findOwnedVariant(empresa, detalleDto.varianteId());
+            ordenVenta.addLine(new SalesOrderLineModel(
+                    variante, detalleDto.cantidad(), salePrice(detalleDto, variante)));
+            movimientos.add(StockMovementModel.outbound(variante, detalleDto.cantidad(), "Venta"));
+        }
+        return movimientos;
+    }
+
+    private ProductVariantModel findOwnedVariant(EnterpriseModel empresa, Long varianteId) {
+        return varianteRepository.findById(varianteId)
+                .filter(v -> v.getProducto().getEmpresa().getId().equals(empresa.getId()))
+                .orElseThrow(() -> new ResourceNotFoundException("Variante con id " + varianteId + " no encontrada"));
+    }
+
+    private BigDecimal salePrice(SalesOrderLineDTO detalleDto, ProductVariantModel variante) {
+        return detalleDto.precioUnitario() != null
+                ? detalleDto.precioUnitario()
+                : variante.getProducto().getPrecioVenta();
+    }
+
+    private void publishSaleRegistered(SalesOrderModel guardada, EnterpriseModel empresa,
+                                       List<StockMovementModel> movimientos) {
         List<Long> varianteIds = movimientos.stream().map(m -> m.getVariante().getId()).distinct().toList();
         eventPublisher.publishEvent(new SaleRegisteredEvent(this, guardada.getId(), empresa.getId(), varianteIds));
-
-        return toDTO(guardada);
     }
 
     @Transactional(readOnly = true)
