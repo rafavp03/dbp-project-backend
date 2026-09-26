@@ -16,7 +16,10 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "movimientos_stock")
+@Table(
+    name = "movimientos_stock",
+    indexes = @Index(name = "idx_movimientos_stock_variante_fecha", columnList = "variante_id, fecha")
+)
 public class StockMovementModel {
 
     private StockMovementModel(ProductVariantModel variante, MovementType tipo, Integer cantidad,

@@ -21,7 +21,10 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(name = "usuarios")
+@Table(
+    name = "usuarios",
+    indexes = @Index(name = "idx_usuarios_empresa", columnList = "empresa_id")
+)
 public class UserModel implements UserDetails {
 
     public UserModel(String nombre, String email, String password, Role role, EnterpriseModel empresa) {

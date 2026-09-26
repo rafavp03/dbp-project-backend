@@ -18,7 +18,10 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(name = "ordenes_compra")
+@Table(
+    name = "ordenes_compra",
+    indexes = @Index(name = "idx_ordenes_compra_empresa", columnList = "empresa_id")
+)
 
 public class PurchaseOrderModel {
 

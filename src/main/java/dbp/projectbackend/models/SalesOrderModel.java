@@ -20,7 +20,10 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(name = "ordenes_venta")
+@Table(
+    name = "ordenes_venta",
+    indexes = @Index(name = "idx_ordenes_venta_empresa", columnList = "empresa_id")
+)
 
 public class SalesOrderModel {
 
