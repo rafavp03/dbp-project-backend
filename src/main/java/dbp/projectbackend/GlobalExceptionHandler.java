@@ -47,13 +47,13 @@ public class GlobalExceptionHandler {
         return build(400, "Invalid Operation", ex.getMessage(), request);
     }
 
-    @ExceptionHandler({LimiteConsultasException.class})
-    public ProblemDetail limiteConsultasHandler(LimiteConsultasException ex, HttpServletRequest request){
+    @ExceptionHandler({QueryLimitExceededException.class})
+    public ProblemDetail limiteConsultasHandler(QueryLimitExceededException ex, HttpServletRequest request){
         return build(429, "Too Many Requests", ex.getMessage(), request);
     }
 
-    @ExceptionHandler({AsistenteNoDisponibleException.class})
-    public ProblemDetail asistenteNoDisponibleHandler(AsistenteNoDisponibleException ex, HttpServletRequest request){
+    @ExceptionHandler({AssistantUnavailableException.class})
+    public ProblemDetail asistenteNoDisponibleHandler(AssistantUnavailableException ex, HttpServletRequest request){
         return build(503, "Service Unavailable", ex.getMessage(), request);
     }
 

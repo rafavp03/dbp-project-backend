@@ -4,7 +4,7 @@ import dbp.projectbackend.dtos.request.LoginDTO;
 import dbp.projectbackend.dtos.request.RegisterDTO;
 import dbp.projectbackend.dtos.response.AuthResponseDTO;
 import dbp.projectbackend.enums.Role;
-import dbp.projectbackend.events.UsuarioRegistradoEvent;
+import dbp.projectbackend.events.UserRegisteredEvent;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.InvalidOperationException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
@@ -54,7 +54,7 @@ public class AuthService {
                 empresa
         );
         userRepository.save(newUser);
-        eventPublisher.publishEvent(new UsuarioRegistradoEvent(
+        eventPublisher.publishEvent(new UserRegisteredEvent(
                 this, newUser.getNombre(), newUser.getEmail(), empresa.getRazonSocial(), Role.ADMIN));
 
         return new AuthResponseDTO(jwtService.generateToken(newUser), userService.toDTO(newUser));

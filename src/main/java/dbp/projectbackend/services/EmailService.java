@@ -33,7 +33,7 @@ public class EmailService {
         this.remitente = remitente;
     }
 
-    public void enviar(String destinatario, String asunto, String plantilla, Map<String, Object> variables) {
+    public void send(String destinatario, String asunto, String plantilla, Map<String, Object> variables) {
         if (!StringUtils.hasText(remitente)) {
             log.info("Correo no configurado: se omite '{}' para {}", asunto, destinatario);
             return;

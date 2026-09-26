@@ -22,7 +22,7 @@ public class SupplierService {
 
     @Transactional
     public SupplierResponseDTO createSupplier(UserModel currentUser, SupplierDTO dto) {
-        EnterpriseModel empresa = findEmpresa(currentUser);
+        EnterpriseModel empresa = findEnterprise(currentUser);
 
         SupplierModel supplier = supplierRepository.findByRuc(dto.ruc())
                 .orElseGet(() -> {
@@ -51,7 +51,7 @@ public class SupplierService {
                 .toList();
     }
 
-    private EnterpriseModel findEmpresa(UserModel currentUser) {
+    private EnterpriseModel findEnterprise(UserModel currentUser) {
         Long empresaId = currentUser.getEmpresa().getId();
         return enterpriseRepository.findById(empresaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa con id " + empresaId + " no encontrada."));

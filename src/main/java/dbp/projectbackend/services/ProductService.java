@@ -32,7 +32,7 @@ public class ProductService {
             throw new DuplicateResourceException("Ya existe un producto con código \"" + dto.codigo() + "\" en esta empresa.");
         }
 
-        CategoryModel categoria = resolveCategoria(empresa, dto.categoriaId());
+        CategoryModel categoria = resolveCategory(empresa, dto.categoriaId());
 
         ProductModel newProduct = new ProductModel(dto.codigo(), dto.nombre(), dto.precioVenta(), empresa);
         newProduct.setDescripcion(dto.descripcion());
@@ -69,7 +69,7 @@ public class ProductService {
             throw new DuplicateResourceException("Ya existe un producto con código \"" + dto.codigo() + "\" en esta empresa.");
         }
 
-        CategoryModel categoria = resolveCategoria(currentUser.getEmpresa(), dto.categoriaId());
+        CategoryModel categoria = resolveCategory(currentUser.getEmpresa(), dto.categoriaId());
 
         product.setCodigo(dto.codigo());
         product.setNombre(dto.nombre());
@@ -91,7 +91,7 @@ public class ProductService {
         productRepository.save(product);
     }
 
-    private CategoryModel resolveCategoria(EnterpriseModel empresa, Long categoriaId) {
+    private CategoryModel resolveCategory(EnterpriseModel empresa, Long categoriaId) {
         if (categoriaId == null) return null;
 
         CategoryModel categoria = categoryRepository.findById(categoriaId)
@@ -126,7 +126,7 @@ public class ProductService {
                 product.getCategoria() != null ? product.getCategoria().getId() : null,
                 product.getCategoria() != null ? product.getCategoria().getNombre() : null,
                 product.getEmpresa().getId(),
-                product.getStockTotal()
+                product.getTotalStock()
         );
     }
 }
