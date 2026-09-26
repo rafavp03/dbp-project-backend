@@ -17,6 +17,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -38,22 +39,31 @@ public class AsistenteService {
     private final UserRepository userRepository;
     private final EnterpriseRepository enterpriseRepository;
     private final int limiteDiario;
+    private final boolean habilitado;
 
     public AsistenteService(ChatClient.Builder chatClientBuilder,
                             ReporteService reporteService,
                             ConsultaIARepository consultaRepository,
                             UserRepository userRepository,
                             EnterpriseRepository enterpriseRepository,
-                            @Value("${asistente.limite-diario:30}") int limiteDiario) {
+                            @Value("${asistente.limite-diario:30}") int limiteDiario,
+                            @Value("${app.ai.api-key:}") String apiKey) {
         this.chatClient = chatClientBuilder.build();
         this.reporteService = reporteService;
         this.consultaRepository = consultaRepository;
         this.userRepository = userRepository;
         this.enterpriseRepository = enterpriseRepository;
         this.limiteDiario = limiteDiario;
+        this.habilitado = StringUtils.hasText(apiKey);
     }
 
     public RespuestaAsistenteDTO preguntar(UserModel usuario, String pregunta) {
+        if (!habilitado) {
+            log.warn("Asistente deshabilitado: no hay clave de IA configurada");
+            throw new AsistenteNoDisponibleException(
+                    "El asistente no esta disponible en este entorno porque no ha sido configurado.");
+        }
+
         long usadasHoy = consultasDeHoy(usuario);
         if (usadasHoy >= limiteDiario) {
             throw new LimiteConsultasException("Llegaste al limite de " + limiteDiario
