@@ -4,7 +4,6 @@ import dbp.projectbackend.dtos.ClientDTO;
 import dbp.projectbackend.dtos.ClientResponseDTO;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
-import dbp.projectbackend.exceptions.UnauthorizedException;
 import dbp.projectbackend.models.ClientModel;
 import dbp.projectbackend.models.EnterpriseModel;
 import dbp.projectbackend.models.UserModel;
@@ -36,10 +35,12 @@ public class ClientService {
         return toDTO(clientRepository.save(newClient));
     }
 
+    @Transactional(readOnly = true)
     public ClientResponseDTO getClientById(UserModel currentUser, Long id) {
         return toDTO(findOwnedClient(currentUser, id));
     }
 
+    @Transactional(readOnly = true)
     public List<ClientResponseDTO> getClientsByEnterprise(UserModel currentUser) {
         return clientRepository.findByEmpresaId(currentUser.getEmpresa().getId()).stream()
                 .map(this::toDTO)
@@ -74,7 +75,7 @@ public class ClientService {
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente con id "+id+" no encontrado."));
 
         if (!client.getEmpresa().getId().equals(currentUser.getEmpresa().getId())) {
-            throw new UnauthorizedException("No tienes acceso a este cliente.");
+            throw new ResourceNotFoundException("Cliente con id "+id+" no encontrado.");
         }
         return client;
     }

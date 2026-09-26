@@ -6,7 +6,6 @@ import dbp.projectbackend.dtos.OrdenVentaDTO;
 import dbp.projectbackend.dtos.OrdenVentaResponseDTO;
 import dbp.projectbackend.events.VentaRegistradaEvent;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
-import dbp.projectbackend.exceptions.UnauthorizedException;
 import dbp.projectbackend.models.*;
 import dbp.projectbackend.repositories.ClientRepository;
 import dbp.projectbackend.repositories.MovimientoStockRepository;
@@ -71,12 +70,13 @@ public class OrdenVentaService {
         return toDTO(guardada);
     }
 
+    @Transactional(readOnly = true)
     public OrdenVentaResponseDTO getOrdenVentaById(UserModel currentUser, Long id){
         OrdenVentaModel orden = ordenVentaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Orden de venta con id " + id + " no encontrada"));
 
         if (!orden.getEmpresa().getId().equals(currentUser.getEmpresa().getId())) {
-            throw new UnauthorizedException("No tienes acceso a esta orden de venta");
+            throw new ResourceNotFoundException("Orden de venta con id " + id + " no encontrada");
         }
 
         return toDTO(orden);

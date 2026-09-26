@@ -5,7 +5,6 @@ import dbp.projectbackend.dtos.MovimientoStockDTO;
 import dbp.projectbackend.dtos.MovimientoStockResponseDTO;
 import dbp.projectbackend.dtos.VarianteProductoResponseDTO;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
-import dbp.projectbackend.exceptions.UnauthorizedException;
 import dbp.projectbackend.models.MovimientoStockModel;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.models.VarianteProductoModel;
@@ -52,6 +51,7 @@ public class MovimientoStockService {
         return toDTO(movimientoStockRepository.save(movimiento));
     }
 
+    @Transactional(readOnly = true)
     public List<MovimientoStockResponseDTO> getKardexByVariante(UserModel currentUser, Long varianteId) {
         findOwnedVariante(currentUser, varianteId);
         return movimientoStockRepository.findByVarianteIdOrderByFechaDesc(varianteId).stream()
@@ -59,6 +59,7 @@ public class MovimientoStockService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<VarianteProductoResponseDTO> getStockBajo(UserModel currentUser) {
         return varianteRepository.findStockBajo(currentUser.getEmpresa().getId()).stream()
                 .map(v -> new VarianteProductoResponseDTO(
@@ -81,7 +82,7 @@ public class MovimientoStockService {
                 .orElseThrow(() -> new ResourceNotFoundException("Variante con id " + varianteId + " no encontrada."));
 
         if (!variante.getProducto().getEmpresa().getId().equals(currentUser.getEmpresa().getId())) {
-            throw new UnauthorizedException("No tienes acceso a esta variante.");
+            throw new ResourceNotFoundException("Variante con id " + varianteId + " no encontrada.");
         }
         return variante;
     }

@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.Hibernate;
 
 import java.time.LocalDateTime;
 
@@ -35,7 +36,7 @@ public class ClientModel {
     @Column(nullable=false)
     private String nombre;
 
-    private Integer telefono;
+    private String telefono;
 
     private String correo;
 
@@ -44,7 +45,7 @@ public class ClientModel {
     @Column(name = "fecha_registro", nullable=false, updatable=false)
     private LocalDateTime fechaRegistro;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "empresa_id", nullable = false)
     @JsonIgnoreProperties("proveedores")
     private EnterpriseModel empresa;
@@ -52,5 +53,18 @@ public class ClientModel {
     @PrePersist
     protected void onCreate() {
         this.fechaRegistro = LocalDateTime.now();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        ClientModel other = (ClientModel) o;
+        return id != null && id.equals(other.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Hibernate.getClass(this).hashCode();
     }
 }

@@ -4,7 +4,6 @@ import dbp.projectbackend.dtos.VarianteProductoDTO;
 import dbp.projectbackend.dtos.VarianteProductoResponseDTO;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
-import dbp.projectbackend.exceptions.UnauthorizedException;
 import dbp.projectbackend.models.ProductModel;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.models.VarianteProductoModel;
@@ -43,6 +42,7 @@ public class VarianteProductoService {
         return toDTO(varianteRepository.save(newVariante));
     }
 
+    @Transactional(readOnly = true)
     public List<VarianteProductoResponseDTO> getVariantesByProducto(UserModel currentUser, Long productoId) {
         findOwnedProduct(currentUser, productoId);
         return varianteRepository.findByProductoId(productoId).stream()
@@ -50,6 +50,7 @@ public class VarianteProductoService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public VarianteProductoResponseDTO getVarianteById(UserModel currentUser, Long id) {
         return toDTO(findOwnedVariante(currentUser, id));
     }
@@ -89,7 +90,7 @@ public class VarianteProductoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Producto con id " + productoId + " no encontrado."));
 
         if (!producto.getEmpresa().getId().equals(currentUser.getEmpresa().getId())) {
-            throw new UnauthorizedException("No tienes acceso a este producto.");
+            throw new ResourceNotFoundException("Producto con id " + productoId + " no encontrado.");
         }
         return producto;
     }
@@ -99,7 +100,7 @@ public class VarianteProductoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Variante con id " + id + " no encontrada."));
 
         if (!variante.getProducto().getEmpresa().getId().equals(currentUser.getEmpresa().getId())) {
-            throw new UnauthorizedException("No tienes acceso a esta variante.");
+            throw new ResourceNotFoundException("Variante con id " + id + " no encontrada.");
         }
         return variante;
     }

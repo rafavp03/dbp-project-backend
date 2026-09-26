@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 
@@ -19,9 +20,11 @@ public class EnterpriseController {
     @PostMapping
     public ResponseEntity<EnterpriseResponseDTO> createEnterprise(@Valid @RequestBody EnterpriseDTO dto) {
         EnterpriseResponseDTO newEnterprise = service.createEnterprise(dto);
-        return ResponseEntity
-                .created(URI.create("/enterprise/" + newEnterprise.id()))
-                .body(newEnterprise);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(newEnterprise.id())
+                .toUri();
+        return ResponseEntity.created(location).body(newEnterprise);
     }
 
     @GetMapping("/{id}")

@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
@@ -27,9 +28,11 @@ public class VarianteProductoController {
             @PathVariable Long productoId,
             @Valid @RequestBody VarianteProductoDTO dto) {
         VarianteProductoResponseDTO nueva = service.createVariante(user, productoId, dto);
-        return ResponseEntity
-                .created(URI.create("/variante/" + nueva.id()))
-                .body(nueva);
+        URI location = ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/variante/{id}")
+                .buildAndExpand(nueva.id())
+                .toUri();
+        return ResponseEntity.created(location).body(nueva);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")

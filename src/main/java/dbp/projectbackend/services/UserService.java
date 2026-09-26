@@ -44,10 +44,12 @@ public class UserService {
         return toDTO(guardado);
     }
 
+    @Transactional(readOnly = true)
     public UserResponseDTO getCurrentUser(UserModel user) {
         return toDTO(user);
     }
 
+    @Transactional(readOnly = true)
     public List<UserResponseDTO> getUsersOfEnterprise(UserModel admin) {
         return userRepository.findByEmpresaId(admin.getEmpresa().getId()).stream()
                 .map(this::toDTO)

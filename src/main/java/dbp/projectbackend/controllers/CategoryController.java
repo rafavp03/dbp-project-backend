@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
@@ -25,9 +26,11 @@ public class CategoryController {
     @PostMapping
     public ResponseEntity<CategoryResponseDTO> createCategory(@AuthenticationPrincipal UserModel user, @Valid @RequestBody CategoryDTO dto) {
         CategoryResponseDTO newCategory = service.createCategory(user, dto);
-        return ResponseEntity
-                .created(URI.create("/category/" + newCategory.id()))
-                .body(newCategory);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(newCategory.id())
+                .toUri();
+        return ResponseEntity.created(location).body(newCategory);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")

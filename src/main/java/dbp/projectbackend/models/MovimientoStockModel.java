@@ -7,6 +7,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.Hibernate;
 
 import java.time.LocalDateTime;
 
@@ -31,7 +32,7 @@ public class MovimientoStockModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "variante_id", nullable = false)
     private VarianteProductoModel variante;
 
@@ -54,12 +55,12 @@ public class MovimientoStockModel {
     private LocalDateTime fecha;
 
     @JsonIgnore
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "orden_compra_id")
     private OrdenCompraModel ordenCompra;
 
     @JsonIgnore
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "orden_venta_id")
     private OrdenVentaModel ordenVenta;
 
@@ -101,5 +102,18 @@ public class MovimientoStockModel {
 
     public Long getOrdenVentaId() {
         return ordenVenta != null ? ordenVenta.getId() : null;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        MovimientoStockModel other = (MovimientoStockModel) o;
+        return id != null && id.equals(other.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Hibernate.getClass(this).hashCode();
     }
 }

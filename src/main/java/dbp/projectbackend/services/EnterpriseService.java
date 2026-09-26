@@ -20,6 +20,7 @@ public class EnterpriseService {
         return toDTO(repository.save(newEnterprise));
     }
 
+    @Transactional(readOnly = true)
     public EnterpriseResponseDTO getEnterpriseById(Long id) {
         return toDTO(repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa con id " + id + " no encontrada.")));

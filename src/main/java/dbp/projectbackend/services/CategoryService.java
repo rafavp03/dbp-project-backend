@@ -4,7 +4,6 @@ import dbp.projectbackend.dtos.CategoryDTO;
 import dbp.projectbackend.dtos.CategoryResponseDTO;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
-import dbp.projectbackend.exceptions.UnauthorizedException;
 import dbp.projectbackend.models.CategoryModel;
 import dbp.projectbackend.models.EnterpriseModel;
 import dbp.projectbackend.models.UserModel;
@@ -35,12 +34,14 @@ public class CategoryService {
         return toDTO(categoryRepository.save(newCategory));
     }
 
+    @Transactional(readOnly = true)
     public List<CategoryResponseDTO> getCategoriesByEnterprise(UserModel currentUser) {
         return categoryRepository.findByEmpresaId(currentUser.getEmpresa().getId()).stream()
                 .map(this::toDTO)
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public CategoryResponseDTO getCategoryById(UserModel currentUser, Long id) {
         return toDTO(findOwnedCategory(currentUser, id));
     }
@@ -72,7 +73,7 @@ public class CategoryService {
                 .orElseThrow(() -> new ResourceNotFoundException("Categoría con id " + id + " no encontrada."));
 
         if (!category.getEmpresa().getId().equals(currentUser.getEmpresa().getId())) {
-            throw new UnauthorizedException("No tienes acceso a esta categoría.");
+            throw new ResourceNotFoundException("Categoría con id " + id + " no encontrada.");
         }
         return category;
     }

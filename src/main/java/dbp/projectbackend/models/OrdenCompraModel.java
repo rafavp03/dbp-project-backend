@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.Hibernate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -31,12 +32,12 @@ public class OrdenCompraModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false)
+   @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "empresa_id", nullable = false)
     @JsonIgnoreProperties("proveedores")
     private EnterpriseModel empresa;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "proveedor_id", nullable = false)
     @JsonIgnoreProperties("empresas")
     private SupplierModel proveedor;
@@ -52,6 +53,7 @@ public class OrdenCompraModel {
     private BigDecimal total;
 
     @OneToMany(mappedBy = "ordenCompra", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("id")
     private List<DetalleOrdenCompraModel> detalles = new ArrayList<>();
 
     @PrePersist
@@ -74,5 +76,18 @@ public class OrdenCompraModel {
         this.total = detalles.stream()
                 .map(DetalleOrdenCompraModel::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        OrdenCompraModel other = (OrdenCompraModel) o;
+        return id != null && id.equals(other.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Hibernate.getClass(this).hashCode();
     }
 }

@@ -60,6 +60,7 @@ public class AuthService {
         return new AuthResponseDTO(jwtService.generateToken(newUser), userService.toDTO(newUser));
     }
 
+    @Transactional(readOnly = true)
     public AuthResponseDTO login(LoginDTO dto) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(dto.email(), dto.password())

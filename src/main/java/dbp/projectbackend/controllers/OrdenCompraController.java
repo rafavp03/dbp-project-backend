@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 
@@ -24,9 +25,11 @@ public class OrdenCompraController {
     @PostMapping
     public ResponseEntity<OrdenCompraResponseDTO> createOrdenCompra(@AuthenticationPrincipal UserModel user, @Valid @RequestBody OrdenCompraDTO ordenCompraDTO) {
         OrdenCompraResponseDTO nuevaOrden = ordenCompraService.createOrdenCompra(user, ordenCompraDTO);
-        return ResponseEntity
-                .created(URI.create("/orden-compra/" + nuevaOrden.id()))
-                .body(nuevaOrden);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(nuevaOrden.id())
+                .toUri();
+        return ResponseEntity.created(location).body(nuevaOrden);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")
