@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -93,6 +94,7 @@ public class AsistenteService {
         return new RespuestaAsistenteDTO(respuesta, restantes, LocalDateTime.now());
     }
 
+    @Transactional(readOnly = true)
     public List<ConsultaIAResponseDTO> historial(UserModel usuario) {
         return consultaRepository.findTop20ByUsuarioIdOrderByFechaDesc(usuario.getId()).stream()
                 .map(c -> new ConsultaIAResponseDTO(c.getId(), c.getPregunta(), c.getRespuesta(),
