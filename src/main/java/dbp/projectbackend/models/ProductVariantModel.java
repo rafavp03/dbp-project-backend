@@ -29,6 +29,9 @@ public class ProductVariantModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    private Long version;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "producto_id", nullable = false)
     @JsonIgnoreProperties({"variantes", "empresa"})
