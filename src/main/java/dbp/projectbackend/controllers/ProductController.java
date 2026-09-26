@@ -1,6 +1,7 @@
 package dbp.projectbackend.controllers;
 
 import dbp.projectbackend.dtos.request.ProductDTO;
+import dbp.projectbackend.dtos.request.ProductPatchDTO;
 import dbp.projectbackend.dtos.response.ProductResponseDTO;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.services.ProductService;
@@ -51,6 +52,12 @@ public class ProductController {
     @PutMapping("/{id}")
     public ResponseEntity<ProductResponseDTO> updateProduct(@AuthenticationPrincipal UserModel user, @PathVariable Long id, @Valid @RequestBody ProductDTO dto) {
         return ResponseEntity.ok(service.updateProduct(user, id, dto));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")
+    @PatchMapping("/{id}")
+    public ResponseEntity<ProductResponseDTO> patchProduct(@AuthenticationPrincipal UserModel user, @PathVariable Long id, @Valid @RequestBody ProductPatchDTO dto) {
+        return ResponseEntity.ok(service.patchProduct(user, id, dto));
     }
 
     @PreAuthorize("hasRole('ADMIN')")

@@ -1,6 +1,7 @@
 package dbp.projectbackend.services;
 
 import dbp.projectbackend.dtos.request.ProductDTO;
+import dbp.projectbackend.dtos.request.ProductPatchDTO;
 import dbp.projectbackend.dtos.response.ProductResponseDTO;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.ForbiddenException;
@@ -80,6 +81,30 @@ public class ProductService {
             product.setUnidadMedida(dto.unidadMedida());
         }
         product.setCategoria(categoria);
+
+        return toDTO(productRepository.save(product));
+    }
+
+    @Transactional
+    public ProductResponseDTO patchProduct(UserModel currentUser, Long id, ProductPatchDTO dto) {
+        ProductModel product = findOwnedProduct(currentUser, id);
+
+        if (dto.codigo() != null) {
+            if (!product.getCodigo().equals(dto.codigo())
+                    && productRepository.existsByEmpresaIdAndCodigo(currentUser.getEmpresa().getId(), dto.codigo())) {
+                throw new DuplicateResourceException(
+                        "Ya existe un producto con código \"" + dto.codigo() + "\" en esta empresa.");
+            }
+            product.setCodigo(dto.codigo());
+        }
+        if (dto.nombre() != null) product.setNombre(dto.nombre());
+        if (dto.descripcion() != null) product.setDescripcion(dto.descripcion());
+        if (dto.unidadMedida() != null) product.setUnidadMedida(dto.unidadMedida());
+        if (dto.precioCompra() != null) product.setPrecioCompra(dto.precioCompra());
+        if (dto.precioVenta() != null) product.setPrecioVenta(dto.precioVenta());
+        if (dto.categoriaId() != null) {
+            product.setCategoria(resolveCategory(currentUser.getEmpresa(), dto.categoriaId()));
+        }
 
         return toDTO(productRepository.save(product));
     }
