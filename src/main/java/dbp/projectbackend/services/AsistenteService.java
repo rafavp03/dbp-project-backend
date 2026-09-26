@@ -6,11 +6,10 @@ import dbp.projectbackend.dtos.ConsultaIAResponseDTO;
 import dbp.projectbackend.dtos.RespuestaAsistenteDTO;
 import dbp.projectbackend.exceptions.AsistenteNoDisponibleException;
 import dbp.projectbackend.exceptions.LimiteConsultasException;
-import dbp.projectbackend.models.ConsultaIAModel;
+import dbp.projectbackend.exceptions.ResourceNotFoundException;
 import dbp.projectbackend.models.Role;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.repositories.ConsultaIARepository;
-import dbp.projectbackend.repositories.EnterpriseRepository;
 import dbp.projectbackend.repositories.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -31,38 +30,42 @@ import java.util.Locale;
 public class AsistenteService {
 
     private static final Locale ES_PE = Locale.of("es", "PE");
-    private static final int MAX_RESPUESTA = 4000;
 
     private final ChatClient chatClient;
     private final ReporteService reporteService;
+    private final AiQueryAuditService auditService;
     private final ConsultaIARepository consultaRepository;
     private final UserRepository userRepository;
-    private final EnterpriseRepository enterpriseRepository;
     private final int limiteDiario;
     private final boolean habilitado;
 
     public AsistenteService(ChatClient.Builder chatClientBuilder,
                             ReporteService reporteService,
+                            AiQueryAuditService auditService,
                             ConsultaIARepository consultaRepository,
                             UserRepository userRepository,
-                            EnterpriseRepository enterpriseRepository,
                             @Value("${asistente.limite-diario:30}") int limiteDiario,
                             @Value("${app.ai.api-key:}") String apiKey) {
         this.chatClient = chatClientBuilder.build();
         this.reporteService = reporteService;
+        this.auditService = auditService;
         this.consultaRepository = consultaRepository;
         this.userRepository = userRepository;
-        this.enterpriseRepository = enterpriseRepository;
         this.limiteDiario = limiteDiario;
         this.habilitado = StringUtils.hasText(apiKey);
     }
 
+    @Transactional
     public RespuestaAsistenteDTO preguntar(UserModel usuario, String pregunta) {
         if (!habilitado) {
             log.warn("Asistente deshabilitado: no hay clave de IA configurada");
             throw new AsistenteNoDisponibleException(
                     "El asistente no esta disponible en este entorno porque no ha sido configurado.");
         }
+
+        userRepository.findByIdForUpdate(usuario.getId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Usuario con id " + usuario.getId() + " no encontrado."));
 
         long usadasHoy = consultasDeHoy(usuario);
         if (usadasHoy >= limiteDiario) {
@@ -89,7 +92,7 @@ public class AsistenteService {
                     .content();
         } catch (RuntimeException ex) {
             log.error("Error al consultar el proveedor de IA", ex);
-            guardar(usuario, pregunta, null, false);
+            auditService.audit(usuario.getId(), empresaId, pregunta, null, false);
             throw new AsistenteNoDisponibleException(
                     "El asistente no esta disponible en este momento. Intenta nuevamente en unos minutos.");
         }
@@ -98,7 +101,7 @@ public class AsistenteService {
             respuesta = "No pude generar una respuesta. Intenta reformular tu pregunta.";
         }
         respuesta = respuesta.strip();
-        guardar(usuario, pregunta, respuesta, true);
+        auditService.audit(usuario.getId(), empresaId, pregunta, respuesta, true);
 
         int restantes = (int) Math.max(0, limiteDiario - usadasHoy - 1);
         return new RespuestaAsistenteDTO(respuesta, restantes, LocalDateTime.now());
@@ -115,16 +118,6 @@ public class AsistenteService {
     private long consultasDeHoy(UserModel usuario) {
         return consultaRepository.countByUsuarioIdAndExitosaTrueAndFechaGreaterThanEqual(
                 usuario.getId(), LocalDate.now().atStartOfDay());
-    }
-
-    private void guardar(UserModel usuario, String pregunta, String respuesta, boolean exitosa) {
-        if (respuesta != null && respuesta.length() > MAX_RESPUESTA) {
-            respuesta = respuesta.substring(0, MAX_RESPUESTA);
-        }
-        consultaRepository.save(new ConsultaIAModel(
-                userRepository.getReferenceById(usuario.getId()),
-                enterpriseRepository.getReferenceById(usuario.getEmpresa().getId()),
-                pregunta, respuesta, exitosa));
     }
 
     private String instrucciones(UserModel usuario, boolean esAdmin) {
