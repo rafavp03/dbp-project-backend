@@ -15,7 +15,10 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "consultas_ia")
+@Table(
+    name = "consultas_ia",
+    indexes = @Index(name = "idx_consultas_ia_usuario_fecha", columnList = "usuario_id, fecha")
+)
 public class ConsultaIAModel {
 
     public ConsultaIAModel(UserModel usuario, EnterpriseModel empresa, String pregunta, String respuesta, boolean exitosa) {
