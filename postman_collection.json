@@ -31,6 +31,11 @@
       "description": "JWT del ADMIN (se llena al registrar/login)"
     },
     {
+      "key": "refreshToken",
+      "value": "",
+      "description": "Refresh token del ADMIN (se llena al registrar/login)"
+    },
+    {
       "key": "tokenEmpleado",
       "value": "",
       "description": "JWT del EMPLEADO (se llena en Login EMPLEADO)"
@@ -311,7 +316,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
-                  "if (pm.response.code < 300) pm.collectionVariables.set(\"token\", pm.response.json().token);"
+                  "if (pm.response.code < 300) { pm.collectionVariables.set(\"token\", pm.response.json().token); pm.collectionVariables.set(\"refreshToken\", pm.response.json().refreshToken); }"
                 ]
               }
             }
@@ -474,7 +479,7 @@
                 "login"
               ]
             },
-            "description": "**Publico.** Autentica con email y contraseña y devuelve un JWT valido por 24 h con el email, el rol y el empresaId. Actualiza `{{token}}`.",
+            "description": "**Publico.** Autentica con email y contraseña y devuelve un access token valido por 15 min y un refresh token de 7 dias con el email, el rol y el empresaId. Actualiza `{{token}}`.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{password}}\"\n}",
@@ -495,7 +500,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
-                  "if (pm.response.code < 300) pm.collectionVariables.set(\"token\", pm.response.json().token);"
+                  "if (pm.response.code < 300) { pm.collectionVariables.set(\"token\", pm.response.json().token); pm.collectionVariables.set(\"refreshToken\", pm.response.json().refreshToken); }"
                 ]
               }
             }
@@ -521,7 +526,7 @@
                     "login"
                   ]
                 },
-                "description": "**Publico.** Autentica con email y contraseña y devuelve un JWT valido por 24 h con el email, el rol y el empresaId. Actualiza `{{token}}`.",
+                "description": "**Publico.** Autentica con email y contraseña y devuelve un access token valido por 15 min y un refresh token de 7 dias con el email, el rol y el empresaId. Actualiza `{{token}}`.",
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{password}}\"\n}",
@@ -566,7 +571,7 @@
                     "login"
                   ]
                 },
-                "description": "**Publico.** Autentica con email y contraseña y devuelve un JWT valido por 24 h con el email, el rol y el empresaId. Actualiza `{{token}}`.",
+                "description": "**Publico.** Autentica con email y contraseña y devuelve un access token valido por 15 min y un refresh token de 7 dias con el email, el rol y el empresaId. Actualiza `{{token}}`.",
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{password}}\"\n}",
@@ -592,6 +597,57 @@
               "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Unauthorized\",\n  \"status\": 401,\n  \"detail\": \"Email o contraseña incorrectos\",\n  \"instance\": \"/auth/login\",\n  \"timestamp\": \"2026-09-25T18:30:00Z\"\n}"
             }
           ]
+        },
+        {
+          "name": "Renovar token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "**Publico.** Cambia un refresh token valido por un access token nuevo. El access token vive 15 minutos y el refresh 7 dias. Actualiza `{{token}}` y `{{refreshToken}}`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code < 300) {",
+                  "  pm.collectionVariables.set(\"token\", pm.response.json().token);",
+                  "  pm.collectionVariables.set(\"refreshToken\", pm.response.json().refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
         },
         {
           "name": "Mi usuario",
@@ -2119,6 +2175,52 @@
           ]
         },
         {
+          "name": "Editar producto parcialmente (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productoId}}"
+              ]
+            },
+            "description": "Actualizacion parcial: solo se aplican los campos que se envian, el resto queda igual. Util para cambiar solo el precio sin reenviar todo el producto. Si se manda `codigo` y ya existe otro con ese codigo en la empresa, responde 409."
+            ,
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"precioVenta\": 79.90\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Solo cambio el precio\", () => pm.expect(pm.response.json().precioVenta).to.eql(79.9));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
           "name": "Desactivar producto (ADMIN)",
           "request": {
             "method": "DELETE",
@@ -2204,7 +2306,7 @@
             "description": "Registra un proveedor y lo vincula a la empresa. Si el RUC ya existe, reutiliza el proveedor y solo lo vincula.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"ruc\": \"{{rucProveedor}}\",\n  \"razonSocial\": \"Textil San Pedro {{rucProveedor}} EIRL\",\n  \"telefono\": 987654321,\n  \"correo\": \"ventas@textilsanpedro.pe\"\n}",
+              "raw": "{\n  \"ruc\": \"{{rucProveedor}}\",\n  \"razonSocial\": \"Textil San Pedro {{rucProveedor}} EIRL\",\n  \"telefono\": \"987654321\",\n  \"correo\": \"ventas@textilsanpedro.pe\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2256,7 +2358,7 @@
                 "description": "Registra un proveedor y lo vincula a la empresa. Si el RUC ya existe, reutiliza el proveedor y solo lo vincula.",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"ruc\": \"{{rucProveedor}}\",\n  \"razonSocial\": \"Textil San Pedro {{rucProveedor}} EIRL\",\n  \"telefono\": 987654321,\n  \"correo\": \"ventas@textilsanpedro.pe\"\n}",
+                  "raw": "{\n  \"ruc\": \"{{rucProveedor}}\",\n  \"razonSocial\": \"Textil San Pedro {{rucProveedor}} EIRL\",\n  \"telefono\": \"987654321\",\n  \"correo\": \"ventas@textilsanpedro.pe\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2273,7 +2375,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": 1,\n  \"ruc\": \"20601234567\",\n  \"razonSocial\": \"Textil San Pedro EIRL\",\n  \"telefono\": 987654321,\n  \"correo\": \"ventas@textilsanpedro.pe\"\n}"
+              "body": "{\n  \"id\": 1,\n  \"ruc\": \"20601234567\",\n  \"razonSocial\": \"Textil San Pedro EIRL\",\n  \"telefono\": \"987654321\",\n  \"correo\": \"ventas@textilsanpedro.pe\"\n}"
             }
           ]
         },
@@ -2330,7 +2432,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n  {\n    \"id\": 1,\n    \"ruc\": \"20601234567\",\n    \"razonSocial\": \"Textil San Pedro EIRL\",\n    \"telefono\": 987654321,\n    \"correo\": \"ventas@textilsanpedro.pe\"\n  }\n]"
+              "body": "[\n  {\n    \"id\": 1,\n    \"ruc\": \"20601234567\",\n    \"razonSocial\": \"Textil San Pedro EIRL\",\n    \"telefono\": \"987654321\",\n    \"correo\": \"ventas@textilsanpedro.pe\"\n  }\n]"
             }
           ]
         },
@@ -2385,7 +2487,7 @@
             "description": "Registra un cliente frecuente (DNI de 8 o RUC de 11 digitos, unico por empresa).",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"documento\": \"{{dni}}\",\n  \"nombre\": \"Maria Torres\",\n  \"telefono\": 912345678,\n  \"correo\": \"maria@gmail.com\",\n  \"direccion\": \"Jr. Gamarra 123, La Victoria\"\n}",
+              "raw": "{\n  \"documento\": \"{{dni}}\",\n  \"nombre\": \"Maria Torres\",\n  \"telefono\": \"912345678\",\n  \"correo\": \"maria@gmail.com\",\n  \"direccion\": \"Jr. Gamarra 123, La Victoria\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2437,7 +2539,7 @@
                 "description": "Registra un cliente frecuente (DNI de 8 o RUC de 11 digitos, unico por empresa).",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"documento\": \"{{dni}}\",\n  \"nombre\": \"Maria Torres\",\n  \"telefono\": 912345678,\n  \"correo\": \"maria@gmail.com\",\n  \"direccion\": \"Jr. Gamarra 123, La Victoria\"\n}",
+                  "raw": "{\n  \"documento\": \"{{dni}}\",\n  \"nombre\": \"Maria Torres\",\n  \"telefono\": \"912345678\",\n  \"correo\": \"maria@gmail.com\",\n  \"direccion\": \"Jr. Gamarra 123, La Victoria\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2454,7 +2556,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": 1,\n  \"documento\": \"45678912\",\n  \"nombre\": \"Maria Torres\",\n  \"telefono\": 912345678,\n  \"correo\": \"maria@gmail.com\",\n  \"direccion\": \"Jr. Gamarra 123, La Victoria\",\n  \"empresaId\": 1\n}"
+              "body": "{\n  \"id\": 1,\n  \"documento\": \"45678912\",\n  \"nombre\": \"Maria Torres\",\n  \"telefono\": \"912345678\",\n  \"correo\": \"maria@gmail.com\",\n  \"direccion\": \"Jr. Gamarra 123, La Victoria\",\n  \"empresaId\": 1\n}"
             },
             {
               "name": "400 Documento invalido",
@@ -2478,7 +2580,7 @@
                 "description": "Registra un cliente frecuente (DNI de 8 o RUC de 11 digitos, unico por empresa).",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"documento\": \"{{dni}}\",\n  \"nombre\": \"Maria Torres\",\n  \"telefono\": 912345678,\n  \"correo\": \"maria@gmail.com\",\n  \"direccion\": \"Jr. Gamarra 123, La Victoria\"\n}",
+                  "raw": "{\n  \"documento\": \"{{dni}}\",\n  \"nombre\": \"Maria Torres\",\n  \"telefono\": \"912345678\",\n  \"correo\": \"maria@gmail.com\",\n  \"direccion\": \"Jr. Gamarra 123, La Victoria\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2552,7 +2654,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n  {\n    \"id\": 1,\n    \"documento\": \"45678912\",\n    \"nombre\": \"Maria Torres\",\n    \"telefono\": 912345678,\n    \"correo\": \"maria@gmail.com\",\n    \"direccion\": \"Jr. Gamarra 123, La Victoria\",\n    \"empresaId\": 1\n  }\n]"
+              "body": "[\n  {\n    \"id\": 1,\n    \"documento\": \"45678912\",\n    \"nombre\": \"Maria Torres\",\n    \"telefono\": \"912345678\",\n    \"correo\": \"maria@gmail.com\",\n    \"direccion\": \"Jr. Gamarra 123, La Victoria\",\n    \"empresaId\": 1\n  }\n]"
             }
           ]
         },
@@ -2608,7 +2710,7 @@
             "description": "Actualiza los datos del cliente.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"documento\": \"{{dni}}\",\n  \"nombre\": \"Maria Torres Rojas\",\n  \"telefono\": 912345678,\n  \"correo\": \"maria@gmail.com\",\n  \"direccion\": \"Jr. Gamarra 123, La Victoria\"\n}",
+              "raw": "{\n  \"documento\": \"{{dni}}\",\n  \"nombre\": \"Maria Torres Rojas\",\n  \"telefono\": \"912345678\",\n  \"correo\": \"maria@gmail.com\",\n  \"direccion\": \"Jr. Gamarra 123, La Victoria\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
