@@ -1,7 +1,7 @@
 package dbp.projectbackend.controllers;
 
-import dbp.projectbackend.dtos.OrdenCompraDTO;
-import dbp.projectbackend.dtos.OrdenCompraResponseDTO;
+import dbp.projectbackend.dtos.request.OrdenCompraDTO;
+import dbp.projectbackend.dtos.response.OrdenCompraResponseDTO;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.services.OrdenCompraService;
 import jakarta.validation.Valid;

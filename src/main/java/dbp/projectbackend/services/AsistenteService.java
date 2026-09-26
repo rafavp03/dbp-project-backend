@@ -2,12 +2,12 @@ package dbp.projectbackend.services;
 
 import dbp.projectbackend.ai.HerramientasAdmin;
 import dbp.projectbackend.ai.HerramientasInventario;
-import dbp.projectbackend.dtos.ConsultaIAResponseDTO;
-import dbp.projectbackend.dtos.AssistantAnswerResponseDTO;
+import dbp.projectbackend.dtos.response.AssistantAnswerResponseDTO;
+import dbp.projectbackend.dtos.response.ConsultaIAResponseDTO;
+import dbp.projectbackend.enums.Role;
 import dbp.projectbackend.exceptions.AsistenteNoDisponibleException;
 import dbp.projectbackend.exceptions.LimiteConsultasException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
-import dbp.projectbackend.models.Role;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.repositories.ConsultaIARepository;
 import dbp.projectbackend.repositories.UserRepository;

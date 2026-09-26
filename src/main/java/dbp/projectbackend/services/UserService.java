@@ -1,7 +1,7 @@
 package dbp.projectbackend.services;
 
-import dbp.projectbackend.dtos.UserDTO;
-import dbp.projectbackend.dtos.UserResponseDTO;
+import dbp.projectbackend.dtos.request.UserDTO;
+import dbp.projectbackend.dtos.response.UserResponseDTO;
 import dbp.projectbackend.events.UsuarioRegistradoEvent;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.InvalidOperationException;

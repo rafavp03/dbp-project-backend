@@ -1,7 +1,7 @@
 package dbp.projectbackend.controllers;
 
-import dbp.projectbackend.dtos.VarianteProductoDTO;
-import dbp.projectbackend.dtos.VarianteProductoResponseDTO;
+import dbp.projectbackend.dtos.request.VarianteProductoDTO;
+import dbp.projectbackend.dtos.response.VarianteProductoResponseDTO;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.services.VarianteProductoService;
 import jakarta.validation.Valid;

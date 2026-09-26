@@ -1,6 +1,7 @@
 package dbp.projectbackend.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import dbp.projectbackend.enums.TipoMovimiento;
 import dbp.projectbackend.exceptions.InvalidOperationException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

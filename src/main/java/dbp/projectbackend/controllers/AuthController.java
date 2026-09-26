@@ -1,8 +1,8 @@
 package dbp.projectbackend.controllers;
 
-import dbp.projectbackend.dtos.AuthResponseDTO;
-import dbp.projectbackend.dtos.LoginDTO;
-import dbp.projectbackend.dtos.RegisterDTO;
+import dbp.projectbackend.dtos.request.LoginDTO;
+import dbp.projectbackend.dtos.request.RegisterDTO;
+import dbp.projectbackend.dtos.response.AuthResponseDTO;
 import dbp.projectbackend.services.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

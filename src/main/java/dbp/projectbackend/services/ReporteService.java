@@ -1,9 +1,11 @@
 package dbp.projectbackend.services;
 
-import dbp.projectbackend.dtos.reportes.*;
+import dbp.projectbackend.dtos.response.report.*;
+import dbp.projectbackend.enums.AgrupacionVentas;
+import dbp.projectbackend.enums.CriterioRanking;
+import dbp.projectbackend.enums.EstadoOrden;
 import dbp.projectbackend.exceptions.InvalidOperationException;
 import dbp.projectbackend.models.DetalleOrdenVentaModel;
-import dbp.projectbackend.models.EstadoOrden;
 import dbp.projectbackend.models.ProductModel;
 import dbp.projectbackend.models.VarianteProductoModel;
 import dbp.projectbackend.repositories.DetalleOrdenVentaRepository;

@@ -1,7 +1,7 @@
 package dbp.projectbackend.services;
 
-import dbp.projectbackend.dtos.SupplierDTO;
-import dbp.projectbackend.dtos.SupplierResponseDTO;
+import dbp.projectbackend.dtos.request.SupplierDTO;
+import dbp.projectbackend.dtos.response.SupplierResponseDTO;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
 import dbp.projectbackend.models.EnterpriseModel;
 import dbp.projectbackend.models.SupplierModel;

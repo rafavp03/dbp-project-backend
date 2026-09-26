@@ -1,8 +1,8 @@
 package dbp.projectbackend.controllers;
 
-import dbp.projectbackend.dtos.ConsultaIAResponseDTO;
-import dbp.projectbackend.dtos.PreguntaDTO;
-import dbp.projectbackend.dtos.AssistantAnswerResponseDTO;
+import dbp.projectbackend.dtos.request.PreguntaDTO;
+import dbp.projectbackend.dtos.response.AssistantAnswerResponseDTO;
+import dbp.projectbackend.dtos.response.ConsultaIAResponseDTO;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.services.AsistenteService;
 import jakarta.validation.Valid;

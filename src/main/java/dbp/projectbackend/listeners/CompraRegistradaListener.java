@@ -1,8 +1,8 @@
 package dbp.projectbackend.listeners;
 
 import dbp.projectbackend.config.AsyncConfig;
+import dbp.projectbackend.enums.Role;
 import dbp.projectbackend.events.CompraRegistradaEvent;
-import dbp.projectbackend.models.Role;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.repositories.UserRepository;
 import dbp.projectbackend.services.EmailService;

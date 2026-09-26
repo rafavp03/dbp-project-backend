@@ -1,9 +1,9 @@
 package dbp.projectbackend.listeners;
 
 import dbp.projectbackend.config.AsyncConfig;
-import dbp.projectbackend.dtos.reportes.StockBajoDTO;
+import dbp.projectbackend.dtos.response.report.StockBajoDTO;
+import dbp.projectbackend.enums.Role;
 import dbp.projectbackend.events.VentaRegistradaEvent;
-import dbp.projectbackend.models.Role;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.models.VarianteProductoModel;
 import dbp.projectbackend.repositories.UserRepository;

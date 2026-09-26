@@ -1,6 +1,8 @@
 package dbp.projectbackend.controllers;
 
-import dbp.projectbackend.dtos.reportes.*;
+import dbp.projectbackend.dtos.response.report.*;
+import dbp.projectbackend.enums.AgrupacionVentas;
+import dbp.projectbackend.enums.CriterioRanking;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.services.ReporteService;
 import lombok.RequiredArgsConstructor;

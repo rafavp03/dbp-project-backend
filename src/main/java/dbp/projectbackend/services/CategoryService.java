@@ -1,7 +1,7 @@
 package dbp.projectbackend.services;
 
-import dbp.projectbackend.dtos.CategoryDTO;
-import dbp.projectbackend.dtos.CategoryResponseDTO;
+import dbp.projectbackend.dtos.request.CategoryDTO;
+import dbp.projectbackend.dtos.response.CategoryResponseDTO;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
 import dbp.projectbackend.models.CategoryModel;

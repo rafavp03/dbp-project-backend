@@ -1,7 +1,7 @@
 package dbp.projectbackend.controllers;
 
-import dbp.projectbackend.dtos.EnterpriseDTO;
-import dbp.projectbackend.dtos.EnterpriseResponseDTO;
+import dbp.projectbackend.dtos.request.EnterpriseDTO;
+import dbp.projectbackend.dtos.response.EnterpriseResponseDTO;
 import dbp.projectbackend.services.EnterpriseService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

@@ -1,10 +1,10 @@
 package dbp.projectbackend.services;
 
-import dbp.projectbackend.dtos.ProductDTO;
-import dbp.projectbackend.dtos.ProductResponseDTO;
+import dbp.projectbackend.dtos.request.ProductDTO;
+import dbp.projectbackend.dtos.response.ProductResponseDTO;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
-import dbp.projectbackend.exceptions.ResourceNotFoundException;
 import dbp.projectbackend.exceptions.ForbiddenException;
+import dbp.projectbackend.exceptions.ResourceNotFoundException;
 import dbp.projectbackend.models.CategoryModel;
 import dbp.projectbackend.models.EnterpriseModel;
 import dbp.projectbackend.models.ProductModel;

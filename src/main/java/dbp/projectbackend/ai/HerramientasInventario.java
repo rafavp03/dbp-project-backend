@@ -1,6 +1,6 @@
 package dbp.projectbackend.ai;
 
-import dbp.projectbackend.dtos.reportes.StockBajoDTO;
+import dbp.projectbackend.dtos.response.report.StockBajoDTO;
 import dbp.projectbackend.services.ReporteService;
 import org.springframework.ai.tool.annotation.Tool;
 

@@ -1,7 +1,7 @@
 package dbp.projectbackend.services;
 
-import dbp.projectbackend.dtos.VarianteProductoDTO;
-import dbp.projectbackend.dtos.VarianteProductoResponseDTO;
+import dbp.projectbackend.dtos.request.VarianteProductoDTO;
+import dbp.projectbackend.dtos.response.VarianteProductoResponseDTO;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
 import dbp.projectbackend.models.ProductModel;

@@ -1,14 +1,14 @@
 package dbp.projectbackend.services;
 
-import dbp.projectbackend.dtos.AuthResponseDTO;
-import dbp.projectbackend.dtos.LoginDTO;
-import dbp.projectbackend.dtos.RegisterDTO;
+import dbp.projectbackend.dtos.request.LoginDTO;
+import dbp.projectbackend.dtos.request.RegisterDTO;
+import dbp.projectbackend.dtos.response.AuthResponseDTO;
+import dbp.projectbackend.enums.Role;
 import dbp.projectbackend.events.UsuarioRegistradoEvent;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.InvalidOperationException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
 import dbp.projectbackend.models.EnterpriseModel;
-import dbp.projectbackend.models.Role;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.repositories.EnterpriseRepository;
 import dbp.projectbackend.repositories.UserRepository;

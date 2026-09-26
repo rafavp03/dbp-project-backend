@@ -1,6 +1,9 @@
 package dbp.projectbackend.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import dbp.projectbackend.enums.CanalVenta;
+import dbp.projectbackend.enums.EstadoOrden;
+import dbp.projectbackend.enums.MedioPago;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

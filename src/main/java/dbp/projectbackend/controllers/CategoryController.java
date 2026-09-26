@@ -1,7 +1,7 @@
 package dbp.projectbackend.controllers;
 
-import dbp.projectbackend.dtos.CategoryDTO;
-import dbp.projectbackend.dtos.CategoryResponseDTO;
+import dbp.projectbackend.dtos.request.CategoryDTO;
+import dbp.projectbackend.dtos.response.CategoryResponseDTO;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.services.CategoryService;
 import jakarta.validation.Valid;

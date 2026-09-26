@@ -1,7 +1,7 @@
 package dbp.projectbackend.repositories;
 
+import dbp.projectbackend.enums.EstadoOrden;
 import dbp.projectbackend.models.DetalleOrdenVentaModel;
-import dbp.projectbackend.models.EstadoOrden;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

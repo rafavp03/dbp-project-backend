@@ -1,7 +1,7 @@
 package dbp.projectbackend.services;
 
-import dbp.projectbackend.dtos.EnterpriseDTO;
-import dbp.projectbackend.dtos.EnterpriseResponseDTO;
+import dbp.projectbackend.dtos.request.EnterpriseDTO;
+import dbp.projectbackend.dtos.response.EnterpriseResponseDTO;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
 import dbp.projectbackend.models.EnterpriseModel;
 import dbp.projectbackend.repositories.EnterpriseRepository;

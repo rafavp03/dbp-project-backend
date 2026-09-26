@@ -1,9 +1,10 @@
 package dbp.projectbackend.services;
 
-import dbp.projectbackend.dtos.DetalleOrdenCompraDTO;
-import dbp.projectbackend.dtos.DetalleOrdenCompraResponseDTO;
-import dbp.projectbackend.dtos.OrdenCompraDTO;
-import dbp.projectbackend.dtos.OrdenCompraResponseDTO;
+import dbp.projectbackend.dtos.request.DetalleOrdenCompraDTO;
+import dbp.projectbackend.dtos.request.OrdenCompraDTO;
+import dbp.projectbackend.dtos.response.DetalleOrdenCompraResponseDTO;
+import dbp.projectbackend.dtos.response.OrdenCompraResponseDTO;
+import dbp.projectbackend.enums.EstadoOrden;
 import dbp.projectbackend.events.CompraRegistradaEvent;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
 import dbp.projectbackend.models.*;

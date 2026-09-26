@@ -1,6 +1,8 @@
 package dbp.projectbackend.ai;
 
-import dbp.projectbackend.dtos.reportes.*;
+import dbp.projectbackend.dtos.response.report.*;
+import dbp.projectbackend.enums.AgrupacionVentas;
+import dbp.projectbackend.enums.CriterioRanking;
 import dbp.projectbackend.exceptions.InvalidOperationException;
 import dbp.projectbackend.services.ReporteService;
 import org.springframework.ai.tool.annotation.Tool;

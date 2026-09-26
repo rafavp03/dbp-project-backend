@@ -1,9 +1,9 @@
 package dbp.projectbackend.services;
 
-import dbp.projectbackend.dtos.AjusteStockDTO;
-import dbp.projectbackend.dtos.MovimientoStockDTO;
-import dbp.projectbackend.dtos.MovimientoStockResponseDTO;
-import dbp.projectbackend.dtos.VarianteProductoResponseDTO;
+import dbp.projectbackend.dtos.request.AjusteStockDTO;
+import dbp.projectbackend.dtos.request.MovimientoStockDTO;
+import dbp.projectbackend.dtos.response.MovimientoStockResponseDTO;
+import dbp.projectbackend.dtos.response.VarianteProductoResponseDTO;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
 import dbp.projectbackend.models.MovimientoStockModel;
 import dbp.projectbackend.models.UserModel;

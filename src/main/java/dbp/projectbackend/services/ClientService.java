@@ -1,7 +1,7 @@
 package dbp.projectbackend.services;
 
-import dbp.projectbackend.dtos.ClientDTO;
-import dbp.projectbackend.dtos.ClientResponseDTO;
+import dbp.projectbackend.dtos.request.ClientDTO;
+import dbp.projectbackend.dtos.response.ClientResponseDTO;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
 import dbp.projectbackend.models.ClientModel;

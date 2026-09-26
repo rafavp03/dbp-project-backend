@@ -1,6 +1,6 @@
 package dbp.projectbackend.events;
 
-import dbp.projectbackend.models.Role;
+import dbp.projectbackend.enums.Role;
 import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 
