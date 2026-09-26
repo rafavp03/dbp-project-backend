@@ -5,9 +5,9 @@
 **Integrantes:**
 - Gabriel Murillo Machicao
 - Héctor Sebastián Choque Dueñas
-- Javier Bravo [completar apellido]
-- Rafael [completar apellidos]
-- Indira [completar apellidos]
+- Javier Bravo Chávez
+- Rafael Vargas Portocarrero
+- Indira Shian Yábar Ramos
 
 ---
 
@@ -17,13 +17,14 @@
 2. [Identificación del Problema o Necesidad](#identificación-del-problema-o-necesidad)
 3. [Descripción de la Solución](#descripción-de-la-solución)
 4. [Modelo de Entidades](#modelo-de-entidades)
-5. [Manejo de Errores](#manejo-de-errores)
-6. [Medidas de Seguridad Implementadas](#medidas-de-seguridad-implementadas)
-7. [Eventos y Asincronía](#eventos-y-asincronía)
-8. [GitHub & Management](#github--management)
-9. [Ejecución local y despliegue](#ejecución-local-y-despliegue)
-10. [Conclusión](#conclusión)
-11. [Apéndices](#apéndices)
+5. [API REST](#api-rest)
+6. [Manejo de Errores](#manejo-de-errores)
+7. [Medidas de Seguridad Implementadas](#medidas-de-seguridad-implementadas)
+8. [Eventos y Asincronía](#eventos-y-asincronía)
+9. [GitHub & Management](#github--management)
+10. [Ejecución local y despliegue](#ejecución-local-y-despliegue)
+11. [Conclusión](#conclusión)
+12. [Apéndices](#apéndices)
 
 ---
 
@@ -101,13 +102,39 @@ erDiagram
 | `ClientModel` | documento (DNI/RUC, único por empresa), nombre, contacto | N:1 con empresa |
 | `CategoryModel` | nombre (único por empresa), descripción, activo | N:1 con empresa |
 | `ProductModel` | código (único por empresa), nombre, precio de compra, precio de venta, activo | N:1 con empresa y categoría; 1:N con variantes (`cascade = ALL`, `orphanRemoval`) |
-| `VarianteProductoModel` | talla, color, SKU, stock, stock mínimo | N:1 con producto (único por producto, talla y color) |
-| `MovimientoStockModel` | tipo (ENTRADA, SALIDA, DEVOLUCION, AJUSTE), cantidad, stock anterior y resultante, motivo | N:1 con variante y, opcionalmente, con la orden que lo originó |
-| `OrdenCompraModel` / `DetalleOrdenCompraModel` | fecha, estado, total / cantidad, precio | N:1 con empresa y proveedor; 1:N con detalles |
-| `OrdenVentaModel` / `DetalleOrdenVentaModel` | fecha y hora, estado, medio de pago, canal, total / cantidad, precio cobrado, precio de lista, costo | N:1 con empresa y cliente (opcional); 1:N con detalles |
-| `ConsultaIAModel` | pregunta, respuesta, exitosa, fecha | N:1 con usuario (`LAZY`, `ON DELETE CASCADE`) y con empresa |
+| `ProductVariantModel` | talla, color, SKU, stock, stock mínimo, `@Version` | N:1 con producto (único por producto, talla y color) |
+| `StockMovementModel` | tipo (ENTRADA, SALIDA, DEVOLUCION, AJUSTE), cantidad, stock anterior y resultante, motivo | N:1 con variante y, opcionalmente, con la orden que lo originó |
+| `PurchaseOrderModel` / `PurchaseOrderLineModel` | fecha, estado, total / cantidad, precio | N:1 con empresa y proveedor; 1:N con detalles |
+| `SalesOrderModel` / `SalesOrderLineModel` | fecha y hora, estado, medio de pago, canal, total / cantidad, precio cobrado, precio de lista, costo | N:1 con empresa y cliente (opcional); 1:N con detalles |
+| `AiQueryModel` | pregunta, respuesta, exitosa, fecha | N:1 con usuario (`LAZY`, `ON DELETE CASCADE`) y con empresa |
 
-Las restricciones se aplican en la base de datos (`nullable`, `unique`, `@UniqueConstraint`, `precision/scale` en los montos) y en la aplicación (`@Valid`, `@NotBlank`, `@Size`, `@Min`, `@Email`, `@Pattern`, `@DecimalMin`). Las reglas de negocio viven en las entidades; por ejemplo, `VarianteProductoModel.disminuirStock()` impide vender más de lo que hay.
+Las restricciones se aplican en la base de datos (`nullable`, `unique`, `@UniqueConstraint` compuestas por empresa, `precision/scale` en los montos e índices en las claves ajenas más consultadas) y en la aplicación (`@Valid`, `@NotBlank`, `@Size`, `@Min`, `@Email`, `@Pattern`, `@DecimalMin`). Las reglas de negocio viven en las entidades; por ejemplo, `ProductVariantModel.decreaseStock()` impide vender más de lo que hay.
+
+## API REST
+
+Todos los recursos están versionados bajo `/api/v1` y en plural. Requieren
+`Authorization: Bearer <token>`, salvo el registro, el login, la renovación de token y
+la creación de una empresa nueva.
+
+| Recurso | Operaciones |
+|---|---|
+| `/auth` | `POST /register`, `POST /login`, `POST /refresh` |
+| `/enterprises` | `POST`, `GET /{id}` |
+| `/users` | `POST`, `GET`, `GET /me`, `DELETE /{id}` |
+| `/categories` | `POST`, `GET`, `GET` · `PUT` · `DELETE /{id}` |
+| `/products` | `POST`, `GET`, `GET` · `PUT` · `PATCH` · `DELETE /{id}` |
+| `/products/{id}/variants` | `POST`, `GET` |
+| `/variants/{id}` | `GET`, `PUT`, `DELETE` |
+| `/clients` | `POST`, `GET`, `GET` · `PUT` · `DELETE /{id}` |
+| `/suppliers` | `POST`, `GET`, `GET /{id}` |
+| `/purchase-orders` | `POST`, `GET /{id}` |
+| `/sales-orders` | `POST`, `GET /{id}` |
+| `/stock-movements` | `POST /inbound` · `/outbound` · `/returns` · `/adjustments`, `GET /variants/{id}`, `GET /low-stock` |
+| `/reports` | `GET /summary` · `/top-products` · `/grouped-sales` · `/low-stock` · `/stale-stock` |
+| `/assistant` | `POST`, `GET /history` |
+
+El detalle de cada endpoint, con ejemplos de body y respuesta, está en
+`postman_collection.json`.
 
 ## Manejo de Errores
 
@@ -116,20 +143,20 @@ Un `@RestControllerAdvice` centraliza todas las excepciones y responde siempre e
 | Excepción | Código | Cuándo ocurre |
 |---|---|---|
 | `MethodArgumentNotValidException`, `HttpMessageNotReadableException`, `MethodArgumentTypeMismatchException`, `InvalidOperationException` | 400 | Datos inválidos, JSON mal formado, parámetros mal escritos u operaciones no permitidas |
-| `BadCredentialsException` | 401 | Email o contraseña incorrectos |
-| `AccessDeniedException`, `UnauthorizedException` | 403 | Rol insuficiente o recurso de otra empresa |
-| `ResourceNotFoundException` | 404 | El recurso no existe |
-| `DuplicateResourceException`, `InsufficientStockException` | 409 | Duplicados (email, código, variante) o stock insuficiente |
-| `LimiteConsultasException` | 429 | El usuario superó su límite diario de preguntas a la IA |
+| `BadCredentialsException`, `InvalidTokenException` | 401 | Email o contraseña incorrectos, o refresh token inválido |
+| `AccessDeniedException`, `ForbiddenException` | 403 | Rol insuficiente, o referencia a un recurso de otra empresa en el cuerpo |
+| `ResourceNotFoundException` | 404 | El recurso no existe, o pertenece a otra empresa |
+| `DuplicateResourceException`, `InsufficientStockException`, `ObjectOptimisticLockingFailureException` | 409 | Duplicados, stock insuficiente o modificación concurrente del mismo recurso |
+| `QueryLimitExceededException` | 429 | El usuario superó su límite diario de preguntas a la IA |
 | `Exception` (genérico) | 500 | Error inesperado, con un mensaje neutro |
-| `AsistenteNoDisponibleException` | 503 | El proveedor de IA no respondió |
+| `AssistantUnavailableException` | 503 | El proveedor de IA no respondió |
 
 Manejar estos casos de forma global evita duplicar `try/catch` en los controllers, garantiza códigos HTTP correctos y protege información sensible.
 
 ## Medidas de Seguridad Implementadas
 
 ### Seguridad de Datos
-- **Autenticación con JWT sin estado:** el login devuelve un token firmado (HMAC) con el email, el rol y el `empresaId`, que vence a las 24 horas. `JwtAuthenticationFilter` lo valida en cada request.
+- **Autenticación con JWT sin estado:** el login devuelve un *access token* firmado (HMAC) con el email, el rol y el `empresaId`, que vence en 15 minutos, y un *refresh token* de 7 días para renovarlo en `POST /api/v1/auth/refresh`. Ambos llevan un claim `type`, así que un refresh token no sirve para acceder a endpoints protegidos. `JwtAuthenticationFilter` los valida en cada request.
 - **Contraseñas con BCrypt** y política mínima: 8 caracteres, una mayúscula y un número. El email es único y la contraseña nunca se incluye en las respuestas.
 - **Roles `ADMIN` y `EMPLEADO`**, guardados en la base de datos y en el token, con `@PreAuthorize` en los endpoints sensibles (reportes, eliminar recursos, gestión de usuarios).
 - **Aislamiento por empresa:** la empresa siempre se obtiene del usuario autenticado (`@AuthenticationPrincipal`), nunca del request. Los services verifican que cada recurso pertenezca a esa empresa.
@@ -142,6 +169,7 @@ Manejar estos casos de forma global evita duplicar `try/catch` en los controller
 - **CSRF:** se desactiva porque la API no usa cookies de sesión; la autenticación va en el header `Authorization`.
 - **CORS:** solo se aceptan los orígenes configurados en `CORS_ALLOWED_ORIGINS`.
 - **Abuso de la IA:** hay límite diario por usuario, preguntas de máximo 500 caracteres y un registro de cada consulta.
+- **Condiciones de carrera:** el stock de cada variante usa bloqueo optimista (`@Version`), así dos ventas simultáneas de la última unidad no se pisan y la segunda falla con 409. La cuota del asistente usa bloqueo pesimista sobre la fila del usuario.
 
 ## Eventos y Asincronía
 
@@ -149,9 +177,9 @@ El sistema publica **eventos de dominio** (`ApplicationEvent`) cuando ocurre alg
 
 | Evento | Se publica en | Listener |
 |---|---|---|
-| `UsuarioRegistradoEvent` | Registro del ADMIN y creación de empleados | Envía un correo de bienvenida con la plantilla `bienvenida.html` |
-| `VentaRegistradaEvent` | Cada venta completada | Revisa las variantes vendidas y, si alguna quedó en su stock mínimo o por debajo, avisa al ADMIN con `stock-bajo.html` |
-| `CompraRegistradaEvent` | Cada compra registrada | Envía al ADMIN la confirmación con el detalle y el total (`compra-registrada.html`) |
+| `UserRegisteredEvent` | Registro del ADMIN y creación de empleados | Envía un correo de bienvenida con la plantilla `bienvenida.html` |
+| `SaleRegisteredEvent` | Cada venta completada | Revisa las variantes vendidas y, si alguna quedó en su stock mínimo o por debajo, avisa al ADMIN con `stock-bajo.html` |
+| `PurchaseRegisteredEvent` | Cada compra registrada | Envía al ADMIN la confirmación con el detalle y el total (`compra-registrada.html`) |
 
 Los listeners usan `@TransactionalEventListener(phase = AFTER_COMMIT)`, así que solo actúan si la operación se guardó correctamente. Además son `@Async`: se ejecutan en un `ThreadPoolTaskExecutor` propio, habilitado con `@EnableAsync`.
 
@@ -190,7 +218,7 @@ Se construyó un backend completo que modela la realidad de un minorista de Gama
 
 ### Trabajo Futuro
 - Entidad de gastos (alquiler, sueldos) para calcular la utilidad neta.
-- Refresh tokens y recuperación de contraseña por correo.
+- Recuperación de contraseña por correo y revocación de refresh tokens para un cierre de sesión real.
 - Anulación de ventas, pagos mixtos y comprobantes electrónicos SUNAT.
 - Paginación en los listados y documentación con Swagger/OpenAPI.
 - Frontend web y móvil.
