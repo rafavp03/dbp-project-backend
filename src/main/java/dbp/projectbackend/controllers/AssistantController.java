@@ -16,7 +16,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/asistente")
+@RequestMapping("/api/v1/assistant")
 @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")
 public class AssistantController {
 
@@ -28,7 +28,7 @@ public class AssistantController {
         return ResponseEntity.ok(service.ask(user, dto.pregunta()));
     }
 
-    @GetMapping("/historial")
+    @GetMapping("/history")
     public ResponseEntity<List<AiQueryResponseDTO>> history(@AuthenticationPrincipal UserModel user) {
         return ResponseEntity.ok(service.history(user));
     }

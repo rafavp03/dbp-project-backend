@@ -13,7 +13,7 @@ import java.net.URI;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/enterprise")
+@RequestMapping("/api/v1/enterprises")
 public class EnterpriseController {
     private final EnterpriseService service;
 

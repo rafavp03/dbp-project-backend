@@ -22,21 +22,21 @@ public class ProductVariantController {
     private final ProductVariantService service;
 
     @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")
-    @PostMapping("/product/{productoId}/variantes")
+    @PostMapping("/api/v1/products/{productoId}/variants")
     public ResponseEntity<ProductVariantResponseDTO> createVariant(
             @AuthenticationPrincipal UserModel user,
             @PathVariable Long productoId,
             @Valid @RequestBody ProductVariantDTO dto) {
         ProductVariantResponseDTO nueva = service.createVariant(user, productoId, dto);
         URI location = ServletUriComponentsBuilder.fromCurrentContextPath()
-                .path("/variante/{id}")
+                .path("/api/v1/variants/{id}")
                 .buildAndExpand(nueva.id())
                 .toUri();
         return ResponseEntity.created(location).body(nueva);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")
-    @GetMapping("/product/{productoId}/variantes")
+    @GetMapping("/api/v1/products/{productoId}/variants")
     public ResponseEntity<List<ProductVariantResponseDTO>> getVariantsByProduct(
             @AuthenticationPrincipal UserModel user,
             @PathVariable Long productoId) {
@@ -44,20 +44,20 @@ public class ProductVariantController {
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")
-    @GetMapping("/variante/{id}")
+    @GetMapping("/api/v1/variants/{id}")
     public ResponseEntity<ProductVariantResponseDTO> getVariant(@AuthenticationPrincipal UserModel user, @PathVariable Long id) {
         return ResponseEntity.ok(service.getVariantById(user, id));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")
-    @PutMapping("/variante/{id}")
+    @PutMapping("/api/v1/variants/{id}")
     public ResponseEntity<ProductVariantResponseDTO> updateVariant(
             @AuthenticationPrincipal UserModel user, @PathVariable Long id, @Valid @RequestBody ProductVariantDTO dto) {
         return ResponseEntity.ok(service.updateVariant(user, id, dto));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/variante/{id}")
+    @DeleteMapping("/api/v1/variants/{id}")
     public ResponseEntity<Void> deactivateVariant(@AuthenticationPrincipal UserModel user, @PathVariable Long id) {
         service.deactivateVariant(user, id);
         return ResponseEntity.noContent().build();

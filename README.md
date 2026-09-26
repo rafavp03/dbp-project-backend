@@ -58,7 +58,7 @@ Estos negocios operan con márgenes pequeños, así que una mala decisión de co
 | **Compras** | Órdenes a proveedores que suman stock automáticamente. |
 | **Ventas** | Ventas con medio de pago y canal. El cliente es opcional. Descuentan stock y guardan el precio de lista y el costo del momento, para calcular ganancia y descuento reales. |
 | **Reportes** | Resumen del periodo (ventas, ganancia, margen, ticket promedio), ranking de productos, ventas por medio de pago, canal, categoría, día u hora, stock bajo y stock parado con el capital inmovilizado. |
-| **Asistente de IA** | `POST /asistente`: responde preguntas como *"¿Qué me conviene reponer?"* usando solo los reportes del negocio del usuario. Tiene límite diario e historial. |
+| **Asistente de IA** | `POST /api/v1/assistant`: responde preguntas como *"¿Qué me conviene reponer?"* usando solo los reportes del negocio del usuario. Tiene límite diario e historial. |
 | **Notificaciones por correo** | Bienvenida al registrarse, alerta de stock bajo después de una venta y confirmación de cada compra registrada. |
 
 ### Tecnologías Utilizadas

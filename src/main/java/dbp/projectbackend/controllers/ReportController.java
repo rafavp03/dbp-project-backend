@@ -17,13 +17,13 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/reportes")
+@RequestMapping("/api/v1/reports")
 @PreAuthorize("hasRole('ADMIN')")
 public class ReportController {
 
     private final ReportService service;
 
-    @GetMapping("/resumen")
+    @GetMapping("/summary")
     public ResponseEntity<SalesSummaryDTO> summary(
             @AuthenticationPrincipal UserModel user,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
@@ -32,7 +32,7 @@ public class ReportController {
         return ResponseEntity.ok(service.summary(enterpriseId(user), startDate(desde, fin), fin));
     }
 
-    @GetMapping("/top-productos")
+    @GetMapping("/top-products")
     public ResponseEntity<List<ProductRankingDTO>> topProducts(
             @AuthenticationPrincipal UserModel user,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
@@ -43,7 +43,7 @@ public class ReportController {
         return ResponseEntity.ok(service.topProducts(enterpriseId(user), startDate(desde, fin), fin, criterio, limite));
     }
 
-    @GetMapping("/ventas-agrupadas")
+    @GetMapping("/grouped-sales")
     public ResponseEntity<List<GroupedSalesDTO>> groupedSales(
             @AuthenticationPrincipal UserModel user,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
@@ -53,12 +53,12 @@ public class ReportController {
         return ResponseEntity.ok(service.groupedSales(enterpriseId(user), startDate(desde, fin), fin, por));
     }
 
-    @GetMapping("/stock-bajo")
+    @GetMapping("/low-stock")
     public ResponseEntity<List<LowStockDTO>> lowStock(@AuthenticationPrincipal UserModel user) {
         return ResponseEntity.ok(service.lowStock(enterpriseId(user)));
     }
 
-    @GetMapping("/stock-parado")
+    @GetMapping("/stale-stock")
     public ResponseEntity<List<StaleProductDTO>> staleStock(
             @AuthenticationPrincipal UserModel user,
             @RequestParam(defaultValue = "60") int dias) {
