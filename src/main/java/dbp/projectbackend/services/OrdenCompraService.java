@@ -4,6 +4,7 @@ import dbp.projectbackend.dtos.DetalleOrdenCompraDTO;
 import dbp.projectbackend.dtos.DetalleOrdenCompraResponseDTO;
 import dbp.projectbackend.dtos.OrdenCompraDTO;
 import dbp.projectbackend.dtos.OrdenCompraResponseDTO;
+import dbp.projectbackend.events.CompraRegistradaEvent;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
 import dbp.projectbackend.models.*;
 import dbp.projectbackend.repositories.MovimientoStockRepository;
@@ -11,6 +12,7 @@ import dbp.projectbackend.repositories.OrdenCompraRepository;
 import dbp.projectbackend.repositories.SupplierRepository;
 import dbp.projectbackend.repositories.VarianteProductoRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,7 @@ public class OrdenCompraService {
     private final SupplierRepository supplierRepository;
     private final VarianteProductoRepository varianteRepository;
     private final MovimientoStockRepository movimientoStockRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public OrdenCompraResponseDTO createOrdenCompra(UserModel currentUser, OrdenCompraDTO dto) {
@@ -52,6 +55,22 @@ public class OrdenCompraService {
 
         movimientos.forEach(m -> m.setOrdenCompra(guardada));
         movimientoStockRepository.saveAll(movimientos);
+
+        eventPublisher.publishEvent(new CompraRegistradaEvent(
+                this,
+                guardada.getId(),
+                empresa.getId(),
+                proveedor.getRazonSocial(),
+                guardada.getFechaEmision(),
+                guardada.getTotal(),
+                guardada.getDetalles().stream()
+                        .map(d -> new CompraRegistradaEvent.LineaCompra(
+                                d.getVariante().getNombreCompleto(),
+                                d.getCantidad(),
+                                d.getPrecioUnitario(),
+                                d.getSubtotal()))
+                        .toList()
+        ));
 
         return toDTO(guardada);
     }

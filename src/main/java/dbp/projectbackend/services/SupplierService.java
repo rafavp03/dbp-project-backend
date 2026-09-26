@@ -20,8 +20,6 @@ public class SupplierService {
     private final SupplierRepository supplierRepository;
     private final EnterpriseRepository enterpriseRepository;
 
-    // Un proveedor puede compartirse entre varias empresas: si ya existe (mismo RUC),
-    // solo se vincula a la empresa actual en vez de duplicarlo.
     @Transactional
     public SupplierResponseDTO createSupplier(UserModel currentUser, SupplierDTO dto) {
         EnterpriseModel empresa = findEmpresa(currentUser);

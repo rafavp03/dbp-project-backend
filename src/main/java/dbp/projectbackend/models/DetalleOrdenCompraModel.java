@@ -28,7 +28,6 @@ public class DetalleOrdenCompraModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // evita recursion infinita al serializar la orden a JSON (orden -> detalles -> orden -> ...)
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "orden_compra_id", nullable = false)

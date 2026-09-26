@@ -18,8 +18,6 @@ import java.math.BigDecimal;
 
 public class DetalleOrdenVentaModel {
 
-    // precioLista y costoUnitario se copian del producto en el momento de la venta,
-    // asi los reportes no cambian si despues sube el costo o el precio.
     public DetalleOrdenVentaModel(VarianteProductoModel variante, Integer cantidad, BigDecimal precioUnitario) {
         this.variante = variante;
         this.cantidad = cantidad;
@@ -34,7 +32,6 @@ public class DetalleOrdenVentaModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // evita recursion infinita al serializar la orden a JSON (orden -> detalles -> orden -> ...)
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "orden_venta_id", nullable = false)
@@ -47,15 +44,12 @@ public class DetalleOrdenVentaModel {
     @Column(nullable = false)
     private Integer cantidad;
 
-    // Precio realmente cobrado (despues de rebaja / regateo)
     @Column(name = "precio_unitario", nullable = false, precision = 12, scale = 2)
     private BigDecimal precioUnitario;
 
-    // Precio de lista al momento de la venta
     @Column(name = "precio_lista", nullable = false, precision = 12, scale = 2)
     private BigDecimal precioLista;
 
-    // Costo de compra al momento de la venta
     @Column(name = "costo_unitario", nullable = false, precision = 12, scale = 2)
     private BigDecimal costoUnitario;
 

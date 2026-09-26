@@ -4,6 +4,7 @@ import dbp.projectbackend.dtos.DetalleOrdenVentaDTO;
 import dbp.projectbackend.dtos.DetalleOrdenVentaResponseDTO;
 import dbp.projectbackend.dtos.OrdenVentaDTO;
 import dbp.projectbackend.dtos.OrdenVentaResponseDTO;
+import dbp.projectbackend.events.VentaRegistradaEvent;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
 import dbp.projectbackend.models.*;
 import dbp.projectbackend.repositories.ClientRepository;
@@ -11,6 +12,7 @@ import dbp.projectbackend.repositories.MovimientoStockRepository;
 import dbp.projectbackend.repositories.OrdenVentaRepository;
 import dbp.projectbackend.repositories.VarianteProductoRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +28,7 @@ public class OrdenVentaService {
     private final ClientRepository clientRepository;
     private final VarianteProductoRepository varianteRepository;
     private final MovimientoStockRepository movimientoStockRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public OrdenVentaResponseDTO createOrdenVenta(UserModel currentUser, OrdenVentaDTO dto){
@@ -60,6 +63,9 @@ public class OrdenVentaService {
 
         movimientos.forEach(m -> m.setOrdenVenta(guardada));
         movimientoStockRepository.saveAll(movimientos);
+
+        List<Long> varianteIds = movimientos.stream().map(m -> m.getVariante().getId()).distinct().toList();
+        eventPublisher.publishEvent(new VentaRegistradaEvent(this, guardada.getId(), empresa.getId(), varianteIds));
 
         return toDTO(guardada);
     }

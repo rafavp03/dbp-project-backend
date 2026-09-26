@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Bienvenido a Tienda Clara</title>
+</head>
+<body style="margin:0;padding:24px;background:#f4f5f7;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+<table role="presentation" width="100%" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:32px;">
+    <tr>
+        <td>
+            <h1 style="margin:0 0 16px;font-size:22px;color:#111827;">¡Hola, <span th:text="${nombre}">Rosa</span>!</h1>
+            <p style="margin:0 0 12px;line-height:1.5;">
+                Tu cuenta en <strong>Tienda Clara</strong> para el negocio
+                <strong th:text="${empresa}">Moda Gamarra SAC</strong> ya está activa.
+            </p>
+            <p style="margin:0 0 12px;line-height:1.5;">
+                Rol asignado: <strong th:text="${rol}">ADMIN</strong>.
+            </p>
+            <p th:if="${rol == 'ADMIN'}" style="margin:0 0 12px;line-height:1.5;">
+                Como administrador puedes registrar tu catálogo, crear las cuentas de tus vendedores,
+                revisar tus reportes y preguntarle al asistente cómo va tu negocio.
+            </p>
+            <p th:if="${rol == 'EMPLEADO'}" style="margin:0 0 12px;line-height:1.5;">
+                Ya puedes registrar ventas y movimientos de inventario de tu tienda.
+            </p>
+            <p style="margin:24px 0 0;font-size:12px;color:#6b7280;">Este es un mensaje automático, no es necesario responder.</p>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
