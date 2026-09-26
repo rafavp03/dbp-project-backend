@@ -3,6 +3,7 @@ package dbp.projectbackend.services;
 import dbp.projectbackend.dtos.AuthResponseDTO;
 import dbp.projectbackend.dtos.LoginDTO;
 import dbp.projectbackend.dtos.RegisterDTO;
+import dbp.projectbackend.events.UsuarioRegistradoEvent;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.InvalidOperationException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
@@ -13,6 +14,7 @@ import dbp.projectbackend.repositories.EnterpriseRepository;
 import dbp.projectbackend.repositories.UserRepository;
 import dbp.projectbackend.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -29,6 +31,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final UserService userService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public AuthResponseDTO register(RegisterDTO dto) {
@@ -51,6 +54,8 @@ public class AuthService {
                 empresa
         );
         userRepository.save(newUser);
+        eventPublisher.publishEvent(new UsuarioRegistradoEvent(
+                this, newUser.getNombre(), newUser.getEmail(), empresa.getRazonSocial(), Role.ADMIN));
 
         return new AuthResponseDTO(jwtService.generateToken(newUser), userService.toDTO(newUser));
     }
