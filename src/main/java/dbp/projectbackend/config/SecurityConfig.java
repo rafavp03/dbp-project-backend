@@ -54,7 +54,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/enterprise").permitAll()   // un negocio nuevo se registra sin cuenta
+                .requestMatchers(HttpMethod.POST, "/enterprise").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
             )

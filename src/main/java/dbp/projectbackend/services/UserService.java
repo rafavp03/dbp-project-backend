@@ -2,12 +2,14 @@ package dbp.projectbackend.services;
 
 import dbp.projectbackend.dtos.UserDTO;
 import dbp.projectbackend.dtos.UserResponseDTO;
+import dbp.projectbackend.events.UsuarioRegistradoEvent;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.InvalidOperationException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,7 @@ import java.util.List;
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public UserResponseDTO createUser(UserModel admin, UserDTO dto) {
@@ -34,7 +37,11 @@ public class UserService {
                 admin.getEmpresa()
         );
 
-        return toDTO(userRepository.save(newUser));
+        UserModel guardado = userRepository.save(newUser);
+        eventPublisher.publishEvent(new UsuarioRegistradoEvent(
+                this, guardado.getNombre(), guardado.getEmail(), admin.getEmpresa().getRazonSocial(), guardado.getRole()));
+
+        return toDTO(guardado);
     }
 
     public UserResponseDTO getCurrentUser(UserModel user) {

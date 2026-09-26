@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Compra registrada</title>
+</head>
+<body style="margin:0;padding:24px;background:#f4f5f7;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+<table role="presentation" width="100%" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:32px;">
+    <tr>
+        <td>
+            <h1 style="margin:0 0 16px;font-size:22px;color:#111827;">
+                Compra registrada <span th:text="'#' + ${compraId}">#3</span>
+            </h1>
+            <p style="margin:0 0 16px;line-height:1.5;">
+                Hola, <span th:text="${nombre}">Rosa</span>. Se registró una compra a
+                <strong th:text="${proveedor}">Textil San Pedro EIRL</strong>
+                el <span th:text="${fecha}">25/09/2026 11:00</span>. El stock ya fue actualizado.
+            </p>
+            <table role="presentation" width="100%" style="border-collapse:collapse;font-size:14px;">
+                <thead>
+                <tr style="background:#f9fafb;text-align:left;">
+                    <th style="padding:8px;border-bottom:1px solid #e5e7eb;">Prenda</th>
+                    <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Cant.</th>
+                    <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">P. unit.</th>
+                    <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Subtotal</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="l : ${lineas}">
+                    <td style="padding:8px;border-bottom:1px solid #f3f4f6;" th:text="${l.descripcion()}">Polo básico - M - Negro</td>
+                    <td style="padding:8px;border-bottom:1px solid #f3f4f6;text-align:right;" th:text="${l.cantidad()}">24</td>
+                    <td style="padding:8px;border-bottom:1px solid #f3f4f6;text-align:right;" th:text="'S/ ' + ${#numbers.formatDecimal(l.precioUnitario(), 1, 'COMMA', 2, 'POINT')}">S/ 12.00</td>
+                    <td style="padding:8px;border-bottom:1px solid #f3f4f6;text-align:right;" th:text="'S/ ' + ${#numbers.formatDecimal(l.subtotal(), 1, 'COMMA', 2, 'POINT')}">S/ 288.00</td>
+                </tr>
+                </tbody>
+            </table>
+            <p style="margin:16px 0 0;text-align:right;font-size:16px;">
+                Total: <strong th:text="'S/ ' + ${#numbers.formatDecimal(total, 1, 'COMMA', 2, 'POINT')}">S/ 432.00</strong>
+            </p>
+            <p style="margin:24px 0 0;font-size:12px;color:#6b7280;">Este es un mensaje automático, no es necesario responder.</p>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
