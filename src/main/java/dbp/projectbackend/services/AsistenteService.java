@@ -3,7 +3,7 @@ package dbp.projectbackend.services;
 import dbp.projectbackend.ai.HerramientasAdmin;
 import dbp.projectbackend.ai.HerramientasInventario;
 import dbp.projectbackend.dtos.ConsultaIAResponseDTO;
-import dbp.projectbackend.dtos.RespuestaAsistenteDTO;
+import dbp.projectbackend.dtos.AssistantAnswerResponseDTO;
 import dbp.projectbackend.exceptions.AsistenteNoDisponibleException;
 import dbp.projectbackend.exceptions.LimiteConsultasException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
@@ -56,7 +56,7 @@ public class AsistenteService {
     }
 
     @Transactional
-    public RespuestaAsistenteDTO preguntar(UserModel usuario, String pregunta) {
+    public AssistantAnswerResponseDTO preguntar(UserModel usuario, String pregunta) {
         if (!habilitado) {
             log.warn("Asistente deshabilitado: no hay clave de IA configurada");
             throw new AsistenteNoDisponibleException(
@@ -104,7 +104,7 @@ public class AsistenteService {
         auditService.audit(usuario.getId(), empresaId, pregunta, respuesta, true);
 
         int restantes = (int) Math.max(0, limiteDiario - usadasHoy - 1);
-        return new RespuestaAsistenteDTO(respuesta, restantes, LocalDateTime.now());
+        return new AssistantAnswerResponseDTO(respuesta, restantes, LocalDateTime.now());
     }
 
     @Transactional(readOnly = true)

@@ -2,7 +2,7 @@ package dbp.projectbackend.controllers;
 
 import dbp.projectbackend.dtos.ConsultaIAResponseDTO;
 import dbp.projectbackend.dtos.PreguntaDTO;
-import dbp.projectbackend.dtos.RespuestaAsistenteDTO;
+import dbp.projectbackend.dtos.AssistantAnswerResponseDTO;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.services.AsistenteService;
 import jakarta.validation.Valid;
@@ -23,7 +23,7 @@ public class AsistenteController {
     private final AsistenteService service;
 
     @PostMapping
-    public ResponseEntity<RespuestaAsistenteDTO> preguntar(@AuthenticationPrincipal UserModel user,
+    public ResponseEntity<AssistantAnswerResponseDTO> preguntar(@AuthenticationPrincipal UserModel user,
                                                            @Valid @RequestBody PreguntaDTO dto) {
         return ResponseEntity.ok(service.preguntar(user, dto.pregunta()));
     }

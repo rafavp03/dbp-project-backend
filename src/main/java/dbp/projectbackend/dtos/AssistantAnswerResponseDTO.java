@@ -2,7 +2,7 @@ package dbp.projectbackend.dtos;
 
 import java.time.LocalDateTime;
 
-public record RespuestaAsistenteDTO(
+public record AssistantAnswerResponseDTO(
         String respuesta,
         int consultasRestantesHoy,
         LocalDateTime fecha
