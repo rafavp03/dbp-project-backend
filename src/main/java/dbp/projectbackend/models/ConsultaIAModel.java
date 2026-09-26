@@ -40,6 +40,7 @@ public class ConsultaIAModel {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private EnterpriseModel empresa;
 
     @Column(nullable = false, length = 500)
