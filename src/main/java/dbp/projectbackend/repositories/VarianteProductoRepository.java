@@ -18,4 +18,7 @@ public interface VarianteProductoRepository extends JpaRepository<VarianteProduc
     @Query("SELECT v FROM VarianteProductoModel v " +
            "WHERE v.producto.empresa.id = :empresaId AND v.activo = true AND v.stock <= v.stockMinimo")
     List<VarianteProductoModel> findStockBajo(@Param("empresaId") Long empresaId);
+
+    @Query("SELECT v FROM VarianteProductoModel v JOIN FETCH v.producto WHERE v.id IN :ids")
+    List<VarianteProductoModel> findAllByIdInWithProducto(@Param("ids") List<Long> ids);
 }

@@ -29,7 +29,7 @@ public class StockBajoListener {
     @Async(AsyncConfig.NOTIFICACIONES_EXECUTOR)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onVentaRegistrada(VentaRegistradaEvent event) {
-        List<StockBajoDTO> enStockBajo = varianteRepository.findAllById(event.getVarianteIds()).stream()
+        List<StockBajoDTO> enStockBajo = varianteRepository.findAllByIdInWithProducto(event.getVarianteIds()).stream()
                 .filter(VarianteProductoModel::isStockBajo)
                 .map(v -> new StockBajoDTO(v.getId(), v.getProducto().getNombre(), v.getTalla(), v.getColor(),
                         v.getStock(), v.getStockMinimo()))
