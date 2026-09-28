@@ -31,22 +31,22 @@
 ## Introducción
 
 ### Contexto
-Gamarra, en La Victoria (Lima), es el emporio textil más grande del Perú y reúne a miles de pequeños negocios de venta de ropa. La mayoría son minoristas que atienden en un puesto o galería y también venden por WhatsApp, Instagram o TikTok. Estos negocios manejan mucha mercadería variada (el mismo modelo en varias tallas y colores), cobran por varios medios (efectivo, Yape, Plin) y compran constantemente a talleres y mayoristas.
+Gamarra (La Victoria, Lima) es el emporio textil más grande del Perú, con miles de minoristas que venden en su puesto y por WhatsApp, Instagram o TikTok. Manejan el mismo modelo en muchas tallas y colores, cobran en efectivo, Yape o Plin, y compran constantemente a talleres y mayoristas.
 
 ### Objetivos del Proyecto
-- Dar a cada negocio un sistema para registrar su catálogo, inventario, compras y ventas.
+- Registrar catálogo, inventario, compras y ventas de cada negocio.
 - Controlar el stock a nivel de **talla y color**, con un historial (kardex) de cada movimiento.
 - Calcular la **ganancia real** de cada venta, considerando el costo y las rebajas por regateo.
-- Ofrecer reportes que respondan preguntas del día a día del negocio.
-- Incorporar un **asistente de IA** que explique esos datos en lenguaje sencillo, de forma segura y sin mezclar información entre negocios.
+- Ofrecer reportes para las decisiones del día a día.
+- Incorporar un **asistente de IA** que explique esos datos en lenguaje sencillo, sin mezclar información entre negocios.
 
 ## Identificación del Problema o Necesidad
 
 ### Descripción del Problema
-El minorista de Gamarra suele llevar su negocio en cuadernos o de memoria. Sabe cuánto vendió en el día, pero no puede responder con facilidad qué modelo le deja más ganancia, qué talla se le acaba primero, cuánto dinero pierde en rebajas o qué mercadería lleva semanas sin venderse. Esto lleva a reponer stock a ciegas, a quedarse sin las tallas que más salen en temporada alta y a tener dinero inmovilizado en prendas que no rotan.
+El minorista suele llevar su negocio en cuadernos o de memoria. Sabe cuánto vendió en el día, pero no qué modelo le deja más ganancia, qué talla se le acaba primero, cuánto pierde en rebajas o qué mercadería no rota. Así repone a ciegas, se queda sin las tallas que más salen y tiene dinero inmovilizado.
 
 ### Justificación
-Estos negocios operan con márgenes pequeños, así que una mala decisión de compra impacta directamente en su liquidez. Las herramientas ERP existentes son caras o están pensadas para empresas grandes. Un sistema simple, adaptado a la forma de trabajar de Gamarra y con un asistente que traduzca los números a recomendaciones, permite que el comerciante tome decisiones con datos sin necesidad de conocimientos técnicos.
+Estos negocios operan con márgenes pequeños: una mala compra impacta directamente en su liquidez. Los ERP existentes son caros o pensados para empresas grandes. Un sistema simple, adaptado a Gamarra y con un asistente que traduzca los números a recomendaciones, permite decidir con datos sin conocimientos técnicos.
 
 ## Descripción de la Solución
 
@@ -68,7 +68,22 @@ Estos negocios operan con márgenes pequeños, así que una mala decisión de co
 - **Seguridad:** Spring Security, JWT (jjwt 0.12), BCrypt
 - **IA:** Spring AI 2.0 con **Google Gemini 2.5 Flash** (API externa) y *tool calling*
 - **Correo:** JavaMailSender (SMTP) con plantillas **Thymeleaf**
-- **Otros:** Lombok, Maven, Docker, GitHub Actions, Postman
+- **Despliegue:** AWS EC2 (Amazon Linux)
+- **Otros:** Lombok, Maven, Docker, GitHub Actions, JUnit 5 y Mockito, Postman
+
+### Arquitectura
+
+```mermaid
+flowchart LR
+    C[Cliente / Postman] -->|HTTPS + JWT| API
+    subgraph EC2[AWS EC2]
+        API[Controllers] --> SVC[Services] --> REPO[Repositories]
+        SVC -. eventos .-> LST["Listeners @Async"]
+    end
+    REPO --> DB[(PostgreSQL)]
+    SVC -->|tool calling| G[Gemini API]
+    LST -->|SMTP| M[Correo]
+```
 
 ## Modelo de Entidades
 
@@ -108,7 +123,7 @@ erDiagram
 | `SalesOrderModel` / `SalesOrderLineModel` | fecha y hora, estado, medio de pago, canal, total / cantidad, precio cobrado, precio de lista, costo | N:1 con empresa y cliente (opcional); 1:N con detalles |
 | `AiQueryModel` | pregunta, respuesta, exitosa, fecha | N:1 con usuario (`LAZY`, `ON DELETE CASCADE`) y con empresa |
 
-Las restricciones se aplican en la base de datos (`nullable`, `unique`, `@UniqueConstraint` compuestas por empresa, `precision/scale` en los montos e índices en las claves ajenas más consultadas) y en la aplicación (`@Valid`, `@NotBlank`, `@Size`, `@Min`, `@Email`, `@Pattern`, `@DecimalMin`). Las reglas de negocio viven en las entidades; por ejemplo, `ProductVariantModel.decreaseStock()` impide vender más de lo que hay.
+Las restricciones se aplican en la base de datos (`nullable`, `unique`, `@UniqueConstraint` compuestas por empresa, `precision/scale` en los montos e índices en las claves ajenas más consultadas) y en la aplicación (`@Valid`, `@NotBlank`, `@Size`, `@Min`, `@Email`, `@Pattern`, `@DecimalMin`). Las relaciones `@ManyToOne` usan `fetch = LAZY` (salvo la empresa del usuario, que se necesita en cada request) y las consultas de reportes usan `JOIN FETCH` para evitar el problema N+1. Las reglas de negocio viven en las entidades; por ejemplo, `ProductVariantModel.decreaseStock()` impide vender más de lo que hay.
 
 ## API REST
 
@@ -142,16 +157,17 @@ Un `@RestControllerAdvice` centraliza todas las excepciones y responde siempre e
 
 | Excepción | Código | Cuándo ocurre |
 |---|---|---|
-| `MethodArgumentNotValidException`, `HttpMessageNotReadableException`, `MethodArgumentTypeMismatchException`, `InvalidOperationException` | 400 | Datos inválidos, JSON mal formado, parámetros mal escritos u operaciones no permitidas |
+| `MethodArgumentNotValidException`, `HttpMessageNotReadableException`, `MethodArgumentTypeMismatchException`, `MissingServletRequestParameterException`, `InvalidOperationException` | 400 | Datos inválidos, JSON mal formado, parámetros faltantes o mal escritos, u operaciones no permitidas |
 | `BadCredentialsException`, `InvalidTokenException` | 401 | Email o contraseña incorrectos, o refresh token inválido |
 | `AccessDeniedException`, `ForbiddenException` | 403 | Rol insuficiente, o referencia a un recurso de otra empresa en el cuerpo |
-| `ResourceNotFoundException` | 404 | El recurso no existe, o pertenece a otra empresa |
-| `DuplicateResourceException`, `InsufficientStockException`, `ObjectOptimisticLockingFailureException` | 409 | Duplicados, stock insuficiente o modificación concurrente del mismo recurso |
+| `ResourceNotFoundException`, `NoResourceFoundException` | 404 | El recurso o la ruta no existe, o pertenece a otra empresa |
+| `HttpRequestMethodNotSupportedException` | 405 | Verbo HTTP no soportado por la ruta |
+| `DuplicateResourceException`, `InsufficientStockException`, `ObjectOptimisticLockingFailureException`, `DataIntegrityViolationException` | 409 | Duplicados, stock insuficiente, modificación concurrente o violación de una restricción de la base de datos |
 | `QueryLimitExceededException` | 429 | El usuario superó su límite diario de preguntas a la IA |
 | `Exception` (genérico) | 500 | Error inesperado, con un mensaje neutro |
 | `AssistantUnavailableException` | 503 | El proveedor de IA no respondió |
 
-Manejar estos casos de forma global evita duplicar `try/catch` en los controllers, garantiza códigos HTTP correctos y protege información sensible.
+Manejarlos de forma global evita `try/catch` repetidos, garantiza códigos HTTP correctos y protege información sensible.
 
 ## Medidas de Seguridad Implementadas
 
@@ -161,11 +177,11 @@ Manejar estos casos de forma global evita duplicar `try/catch` en los controller
 - **Roles `ADMIN` y `EMPLEADO`**, guardados en la base de datos y en el token, con `@PreAuthorize` en los endpoints sensibles (reportes, eliminar recursos, gestión de usuarios).
 - **Aislamiento por empresa:** la empresa siempre se obtiene del usuario autenticado (`@AuthenticationPrincipal`), nunca del request. Los services verifican que cada recurso pertenezca a esa empresa.
 - **IA segura por diseño:** Gemini no accede a la base de datos. Solo puede invocar herramientas de lectura (`@Tool`) creadas para cada pregunta y fijadas a la empresa del token. El EMPLEADO no recibe las herramientas de información financiera.
-- **Secretos fuera del código:** la clave JWT, las credenciales de la base de datos, del correo y de Gemini se leen de variables de entorno (`.env`, ignorado por Git).
+- **Secretos fuera del código:** JWT, base de datos, correo y Gemini se configuran con variables de entorno (`.env`, ignorado por Git).
 
 ### Prevención de Vulnerabilidades
 - **Inyección SQL:** todo el acceso a datos usa Spring Data JPA con consultas parametrizadas; no se concatena SQL.
-- **XSS:** la API solo devuelve JSON, y los datos se validan antes de persistirse. Las plantillas de correo usan Thymeleaf, que escapa el contenido.
+- **XSS:** la API solo devuelve JSON, los datos se validan y Thymeleaf escapa el contenido de los correos.
 - **CSRF:** se desactiva porque la API no usa cookies de sesión; la autenticación va en el header `Authorization`.
 - **CORS:** solo se aceptan los orígenes configurados en `CORS_ALLOWED_ORIGINS`.
 - **Abuso de la IA:** hay límite diario por usuario, preguntas de máximo 500 caracteres y un registro de cada consulta.
@@ -181,13 +197,13 @@ El sistema publica **eventos de dominio** (`ApplicationEvent`) cuando ocurre alg
 | `SaleRegisteredEvent` | Cada venta completada | Revisa las variantes vendidas y, si alguna quedó en su stock mínimo o por debajo, avisa al ADMIN con `stock-bajo.html` |
 | `PurchaseRegisteredEvent` | Cada compra registrada | Envía al ADMIN la confirmación con el detalle y el total (`compra-registrada.html`) |
 
-Los listeners usan `@TransactionalEventListener(phase = AFTER_COMMIT)`, así que solo actúan si la operación se guardó correctamente. Además son `@Async`: se ejecutan en un `ThreadPoolTaskExecutor` propio, habilitado con `@EnableAsync`.
+Los listeners usan `@TransactionalEventListener(phase = AFTER_COMMIT)`, así que solo actúan si la operación se guardó, y son `@Async`: corren en un `ThreadPoolTaskExecutor` propio habilitado con `@EnableAsync`.
 
-**¿Por qué asíncronos?** Enviar un correo depende de un servidor SMTP externo y puede tardar varios segundos o fallar. Si fuera síncrono, el vendedor esperaría ese tiempo para registrar una venta, y un fallo del correo podría revertir la operación. Con eventos asíncronos, la venta responde de inmediato y un error de correo solo se registra en el log.
+**¿Por qué asíncronos?** Enviar un correo depende de un servidor SMTP externo que puede tardar segundos o fallar. Si fuera síncrono, el vendedor esperaría para registrar una venta y un fallo del correo podría revertirla. Así, la venta responde de inmediato y un error de correo solo queda en el log.
 
 ## GitHub & Management
 
-- **Organización:** cada integrante trabajó en su propia rama (`gabriel`, `hector`, `indira`, `javier`, `rafael`) y los cambios llegaron a `main` mediante **Pull Requests** (más de 15), revisados por el equipo antes del merge. [Completar: si usaron GitHub Projects o Issues, describir el tablero, la asignación de tareas y las fechas límite.]
+- **Organización:** cada integrante trabajó en su propia rama (`Gabriel`, `hector`, `indira`, `javier`, `rafael`) y los cambios llegaron a `main` mediante **Pull Requests** (más de 20). [Completar: si usaron GitHub Projects o Issues, describir el tablero, la asignación de tareas y las fechas límite.]
 - **Reparto:** Empresa y Proveedor; Órdenes de venta; Órdenes de compra; Usuarios, seguridad y Clientes; Catálogo, inventario, reportes e IA.
 - **GitHub Actions:** el workflow `.github/workflows/ci.yml` se ejecuta en cada push y en cada Pull Request a `main`:
   1. levanta un contenedor PostgreSQL 16 como servicio;
@@ -195,6 +211,7 @@ Los listeners usan `@TransactionalEventListener(phase = AFTER_COMMIT)`, así que
   3. compila y ejecuta los tests con `./mvnw verify`.
 
   Si algo falla, el PR queda marcado en rojo antes de hacer merge.
+- **Tests:** 11 en total. `ProductVariantModelTest` cubre las reglas de stock, `AssistantServiceTest` cubre la cuota diaria, el bloqueo pesimista y la falta de clave de IA (con Mockito), y `contextLoads` levanta la aplicación completa contra PostgreSQL.
 
 ## Ejecución local y despliegue
 
@@ -203,18 +220,22 @@ Los listeners usan `@TransactionalEventListener(phase = AFTER_COMMIT)`, así que
 3. Ejecutar la aplicación: `./mvnw spring-boot:run`, que queda en `http://localhost:8080`.
 4. Importar `postman_collection.json` (en la raíz) y ejecutar las carpetas en orden.
 
-**Despliegue:** la aplicación se construye con el `Dockerfile` de la raíz y se despliega con PostgreSQL en la nube, con las mismas variables de entorno. URL pública: **[completar]**
+### Despliegue en AWS
+- **Infraestructura:** instancia **EC2** (Amazon Linux, región `us-east-1`) con acceso SSH mediante EC2 Instance Connect y un *security group* que expone el puerto HTTP 80. Base de datos: **[confirmar: Amazon RDS o PostgreSQL en la instancia]**.
+- **Proceso:** se clona el repositorio en la instancia, se compila con `./mvnw clean package` y se ejecuta el `.jar` con las variables de entorno de producción (`DB_*`, `JWT_SECRET`, `GEMINI_API_KEY`, `PORT=80`). También se incluye un `Dockerfile` multi-etapa para desplegar como contenedor.
+- **URL pública:** `http://ec2-32-192-242-54.compute-1.amazonaws.com/api/v1`
+- **Evidencia:** la carpeta `AWS/` contiene capturas, un video de las pruebas y la colección de Postman apuntando al servidor.
 
 ## Conclusión
 
 ### Logros del Proyecto
-Se construyó un backend completo que modela la realidad de un minorista de Gamarra. Incluye variantes por talla y color, kardex, ventas con medio de pago y canal, y un cálculo de ganancia que resiste cambios de precio. Sobre esa base, los reportes y el asistente de IA convierten los registros en respuestas concretas: qué reponer, qué rematar y dónde se pierde margen. Todo con aislamiento estricto entre negocios.
+Se construyó y desplegó un backend que modela la realidad de un minorista de Gamarra: variantes por talla y color, kardex, ventas por medio de pago y canal, y una ganancia que resiste cambios de precio. Los reportes y el asistente de IA convierten esos registros en respuestas concretas (qué reponer, qué rematar, dónde se pierde margen), con aislamiento estricto entre negocios.
 
 ### Aprendizajes Clave
-- Diseñar el modelo de datos pensando desde el inicio en el análisis posterior: guardar el costo y el precio de lista en cada venta fue clave para los reportes.
+- Diseñar el modelo pensando en el análisis: guardar costo y precio de lista en cada venta fue clave para los reportes.
 - La seguridad de una IA no se logra con el prompt, sino limitando lo que puede hacer mediante herramientas de solo lectura.
-- Trabajar con ramas y Pull Requests exige integrar seguido para evitar conflictos.
-- Los eventos asíncronos desacoplan tareas secundarias, como las notificaciones, del flujo principal.
+- Con ramas y Pull Requests hay que integrar seguido para evitar conflictos.
+- Los eventos asíncronos desacoplan las notificaciones del flujo principal.
 
 ### Trabajo Futuro
 - Entidad de gastos (alquiler, sueldos) para calcular la utilidad neta.
