@@ -1,11 +1,14 @@
 package dbp.projectbackend.controllers;
 
 import dbp.projectbackend.dtos.request.ProductVariantDTO;
+import dbp.projectbackend.dtos.response.PageResponseDTO;
 import dbp.projectbackend.dtos.response.ProductVariantResponseDTO;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.services.ProductVariantService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -13,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
-import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
@@ -37,10 +39,11 @@ public class ProductVariantController {
 
     @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")
     @GetMapping("/api/v1/products/{productoId}/variants")
-    public ResponseEntity<List<ProductVariantResponseDTO>> getVariantsByProduct(
+    public ResponseEntity<PageResponseDTO<ProductVariantResponseDTO>> getVariantsByProduct(
             @AuthenticationPrincipal UserModel user,
-            @PathVariable Long productoId) {
-        return ResponseEntity.ok(service.getVariantsByProduct(user, productoId));
+            @PathVariable Long productoId,
+            @PageableDefault(size = 20, sort = "id") Pageable pageable) {
+        return ResponseEntity.ok(service.getVariantsByProduct(user, productoId, pageable));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")

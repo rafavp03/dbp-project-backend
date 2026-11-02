@@ -2,19 +2,23 @@ package dbp.projectbackend.services;
 
 import dbp.projectbackend.dtos.request.StockAdjustmentDTO;
 import dbp.projectbackend.dtos.request.StockMovementDTO;
-import dbp.projectbackend.dtos.response.StockMovementResponseDTO;
+import dbp.projectbackend.dtos.response.PageResponseDTO;
 import dbp.projectbackend.dtos.response.ProductVariantResponseDTO;
+import dbp.projectbackend.dtos.response.StockMovementResponseDTO;
+import dbp.projectbackend.events.StockMovementRegisteredEvent;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
+import dbp.projectbackend.mappers.ProductVariantMapper;
+import dbp.projectbackend.mappers.StockMovementMapper;
+import dbp.projectbackend.models.ProductVariantModel;
 import dbp.projectbackend.models.StockMovementModel;
 import dbp.projectbackend.models.UserModel;
-import dbp.projectbackend.models.ProductVariantModel;
-import dbp.projectbackend.repositories.StockMovementRepository;
 import dbp.projectbackend.repositories.ProductVariantRepository;
+import dbp.projectbackend.repositories.StockMovementRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -22,59 +26,71 @@ public class StockMovementService {
 
     private final StockMovementRepository movimientoStockRepository;
     private final ProductVariantRepository varianteRepository;
+    private final StockMovementMapper movimientoMapper;
+    private final ProductVariantMapper varianteMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public StockMovementResponseDTO registerInbound(UserModel currentUser, StockMovementDTO dto) {
         ProductVariantModel variante = findOwnedVariant(currentUser, dto.varianteId());
-        StockMovementModel movimiento = StockMovementModel.inbound(variante, dto.cantidad(), dto.motivo());
-        return toDTO(movimientoStockRepository.save(movimiento));
+        return register(currentUser, StockMovementModel.inbound(variante, dto.cantidad(), dto.motivo()));
     }
 
     @Transactional
     public StockMovementResponseDTO registerOutbound(UserModel currentUser, StockMovementDTO dto) {
         ProductVariantModel variante = findOwnedVariant(currentUser, dto.varianteId());
-        StockMovementModel movimiento = StockMovementModel.outbound(variante, dto.cantidad(), dto.motivo());
-        return toDTO(movimientoStockRepository.save(movimiento));
+        return register(currentUser, StockMovementModel.outbound(variante, dto.cantidad(), dto.motivo()));
     }
 
     @Transactional
     public StockMovementResponseDTO registerReturn(UserModel currentUser, StockMovementDTO dto) {
         ProductVariantModel variante = findOwnedVariant(currentUser, dto.varianteId());
-        StockMovementModel movimiento = StockMovementModel.customerReturn(variante, dto.cantidad(), dto.motivo());
-        return toDTO(movimientoStockRepository.save(movimiento));
+        return register(currentUser, StockMovementModel.customerReturn(variante, dto.cantidad(), dto.motivo()));
     }
 
     @Transactional
     public StockMovementResponseDTO registerAdjustment(UserModel currentUser, StockAdjustmentDTO dto) {
         ProductVariantModel variante = findOwnedVariant(currentUser, dto.varianteId());
-        StockMovementModel movimiento = StockMovementModel.adjustment(variante, dto.nuevoStock(), dto.motivo());
-        return toDTO(movimientoStockRepository.save(movimiento));
+        return register(currentUser, StockMovementModel.adjustment(variante, dto.nuevoStock(), dto.motivo()));
     }
 
     @Transactional(readOnly = true)
-    public List<StockMovementResponseDTO> getKardexByVariant(UserModel currentUser, Long varianteId) {
+    public PageResponseDTO<StockMovementResponseDTO> getKardexByVariant(UserModel currentUser, Long varianteId,
+                                                                        Pageable pageable) {
         findOwnedVariant(currentUser, varianteId);
-        return movimientoStockRepository.findByVarianteIdOrderByFechaDesc(varianteId).stream()
-                .map(this::toDTO)
-                .toList();
+        return PageResponseDTO.from(
+                movimientoStockRepository.findByVarianteId(varianteId, pageable).map(movimientoMapper::toResponse));
     }
 
     @Transactional(readOnly = true)
-    public List<ProductVariantResponseDTO> getLowStock(UserModel currentUser) {
-        return varianteRepository.findStockBajo(currentUser.getEmpresa().getId()).stream()
-                .map(v -> new ProductVariantResponseDTO(
-                        v.getId(),
-                        v.getProducto().getId(),
-                        v.getProducto().getNombre(),
-                        v.getTalla(),
-                        v.getColor(),
-                        v.getSku(),
-                        v.getStock(),
-                        v.getStockMinimo(),
-                        v.getActivo(),
-                        v.isLowStock()
-                ))
-                .toList();
+    public PageResponseDTO<ProductVariantResponseDTO> getLowStock(UserModel currentUser, Pageable pageable) {
+        return PageResponseDTO.from(
+                varianteRepository.findStockBajo(currentUser.getEmpresa().getId(), pageable)
+                        .map(varianteMapper::toResponse));
+    }
+
+    /**
+     * Guarda el movimiento y publica el evento. Los listeners (alerta de stock bajo y aviso de
+     * ajuste al ADMIN) corren después del commit, así que un rollback no genera correos.
+     */
+    private StockMovementResponseDTO register(UserModel currentUser, StockMovementModel movimiento) {
+        StockMovementModel guardado = movimientoStockRepository.save(movimiento);
+        ProductVariantModel variante = guardado.getVariante();
+
+        eventPublisher.publishEvent(new StockMovementRegisteredEvent(
+                this,
+                guardado.getId(),
+                currentUser.getEmpresa().getId(),
+                variante.getId(),
+                variante.getFullName(),
+                guardado.getTipo(),
+                guardado.getCantidad(),
+                guardado.getStockAnterior(),
+                guardado.getStockResultante(),
+                guardado.getMotivo(),
+                currentUser.getNombre()));
+
+        return movimientoMapper.toResponse(guardado);
     }
 
     private ProductVariantModel findOwnedVariant(UserModel currentUser, Long varianteId) {
@@ -85,19 +101,5 @@ public class StockMovementService {
             throw new ResourceNotFoundException("Variante con id " + varianteId + " no encontrada.");
         }
         return variante;
-    }
-
-    private StockMovementResponseDTO toDTO(StockMovementModel movimiento) {
-        return new StockMovementResponseDTO(
-                movimiento.getId(),
-                movimiento.getVariante().getId(),
-                movimiento.getVariante().getFullName(),
-                movimiento.getTipo(),
-                movimiento.getCantidad(),
-                movimiento.getStockAnterior(),
-                movimiento.getStockResultante(),
-                movimiento.getMotivo(),
-                movimiento.getFecha()
-        );
     }
 }

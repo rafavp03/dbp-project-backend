@@ -17,14 +17,15 @@
 2. [Identificación del Problema o Necesidad](#identificación-del-problema-o-necesidad)
 3. [Descripción de la Solución](#descripción-de-la-solución)
 4. [Modelo de Entidades](#modelo-de-entidades)
-5. [API REST](#api-rest)
-6. [Manejo de Errores](#manejo-de-errores)
-7. [Medidas de Seguridad Implementadas](#medidas-de-seguridad-implementadas)
-8. [Eventos y Asincronía](#eventos-y-asincronía)
-9. [GitHub & Management](#github--management)
-10. [Ejecución local y despliegue](#ejecución-local-y-despliegue)
-11. [Conclusión](#conclusión)
-12. [Apéndices](#apéndices)
+5. [Mapeo entidad–DTO con MapStruct](#mapeo-entidaddto-con-mapstruct)
+6. [API REST](#api-rest)
+7. [Manejo de Errores](#manejo-de-errores)
+8. [Medidas de Seguridad Implementadas](#medidas-de-seguridad-implementadas)
+9. [Eventos y Asincronía](#eventos-y-asincronía)
+10. [GitHub & Management](#github--management)
+11. [Ejecución local y despliegue](#ejecución-local-y-despliegue)
+12. [Conclusión](#conclusión)
+13. [Apéndices](#apéndices)
 
 ---
 
@@ -60,15 +61,16 @@ Estos negocios operan con márgenes pequeños: una mala compra impacta directame
 | **Ventas** | Ventas con medio de pago y canal. El cliente es opcional. Descuentan stock y guardan el precio de lista y el costo del momento, para calcular ganancia y descuento reales. |
 | **Reportes** | Resumen del periodo (ventas, ganancia, margen, ticket promedio), ranking de productos, ventas por medio de pago, canal, categoría, día u hora, stock bajo y stock parado con el capital inmovilizado. |
 | **Asistente de IA** | `POST /api/v1/assistant`: responde preguntas como *"¿Qué me conviene reponer?"* usando solo los reportes del negocio del usuario. Tiene límite diario e historial. |
-| **Notificaciones por correo** | Bienvenida al registrarse, alerta de stock bajo después de una venta y confirmación de cada compra registrada. |
+| **Notificaciones por correo** | Bienvenida al registrarse, alerta de stock bajo (por venta o salida manual), confirmación de compras, aviso al dueño de ajustes de inventario y cambios de precio, constancia de compra al cliente y aviso al empleado cuya cuenta se elimina. |
 
 ### Tecnologías Utilizadas
 - **Lenguaje y framework:** Java 21, Spring Boot 4.1 (Web MVC, Data JPA, Validation, Security, Mail)
-- **Base de datos:** PostgreSQL 16, levantada con Docker Compose en desarrollo
+- **Base de datos:** PostgreSQL 16 en un contenedor Docker (Docker Compose), tanto en desarrollo como en la instancia EC2 de producción
 - **Seguridad:** Spring Security, JWT (jjwt 0.12), BCrypt
 - **IA:** Spring AI 2.0 con **Google Gemini 2.5 Flash** (API externa) y *tool calling*
 - **Correo:** JavaMailSender (SMTP) con plantillas **Thymeleaf**
 - **Despliegue:** AWS EC2 (Amazon Linux)
+- **Mapeo y paginación:** MapStruct 1.6 para entidad–DTO y Spring Data `Pageable` en todos los listados
 - **Otros:** Lombok, Maven, Docker, GitHub Actions, JUnit 5 y Mockito, Postman
 
 ### Arquitectura
@@ -78,9 +80,10 @@ flowchart LR
     C[Cliente / Postman] -->|HTTPS + JWT| API
     subgraph EC2[AWS EC2]
         API[Controllers] --> SVC[Services] --> REPO[Repositories]
+        SVC --> MAP[Mappers MapStruct]
         SVC -. eventos .-> LST["Listeners @Async"]
+        REPO --> DB[("PostgreSQL 16<br/>contenedor Docker")]
     end
-    REPO --> DB[(PostgreSQL)]
     SVC -->|tool calling| G[Gemini API]
     LST -->|SMTP| M[Correo]
 ```
@@ -125,6 +128,20 @@ erDiagram
 
 Las restricciones se aplican en la base de datos (`nullable`, `unique`, `@UniqueConstraint` compuestas por empresa, `precision/scale` en los montos e índices en las claves ajenas más consultadas) y en la aplicación (`@Valid`, `@NotBlank`, `@Size`, `@Min`, `@Email`, `@Pattern`, `@DecimalMin`). Las relaciones `@ManyToOne` usan `fetch = LAZY` (salvo la empresa del usuario, que se necesita en cada request) y las consultas de reportes usan `JOIN FETCH` para evitar el problema N+1. Las reglas de negocio viven en las entidades; por ejemplo, `ProductVariantModel.decreaseStock()` impide vender más de lo que hay.
 
+## Mapeo entidad–DTO con MapStruct
+
+Las entidades nunca salen de la capa de servicio: los controllers reciben DTOs de request y devuelven DTOs de respuesta (`record`). La conversión la hacen **mappers de MapStruct** (paquete `mappers`), que generan el código en tiempo de compilación, sin reflexión:
+
+| Mapper | Qué convierte |
+|---|---|
+| `ProductMapper` | `ProductModel` → `ProductResponseDTO` (aplana categoría y empresa, calcula `stockTotal`); `ProductDTO` → entidad para PUT y `ProductPatchDTO` → entidad para PATCH (ignora los `null`) |
+| `ProductVariantMapper` | Variante → DTO (incluye `stockBajo`); request → entidad sin tocar el stock, que solo cambia por el kardex |
+| `SalesOrderMapper`, `PurchaseOrderMapper` | Orden y sus líneas en una sola llamada (la lista de detalles se mapea automáticamente) |
+| `StockMovementMapper` | Movimiento del kardex con la descripción completa de la variante |
+| `CategoryMapper`, `ClientMapper`, `SupplierMapper`, `UserMapper`, `EnterpriseMapper`, `AiQueryMapper` | Resto de recursos |
+
+Todos comparten `CentralMapperConfig`: son beans de Spring (`componentModel = "spring"`) y usan `unmappedTargetPolicy = ERROR`, así que si un DTO de respuesta gana un campo y nadie lo mapea, **la compilación falla** en vez de devolver `null` en silencio. Los métodos `updateEntity` solo copian los campos editables: el id, la empresa, el stock y las fechas nunca se toman del request. Las entidades se siguen creando con sus constructores, que exigen los datos obligatorios, y las reglas de negocio (por ejemplo, validar que la categoría sea de la misma empresa) siguen en los services.
+
 ## API REST
 
 Todos los recursos están versionados bajo `/api/v1` y en plural. Requieren
@@ -142,8 +159,8 @@ la creación de una empresa nueva.
 | `/variants/{id}` | `GET`, `PUT`, `DELETE` |
 | `/clients` | `POST`, `GET`, `GET` · `PUT` · `DELETE /{id}` |
 | `/suppliers` | `POST`, `GET`, `GET /{id}` |
-| `/purchase-orders` | `POST`, `GET /{id}` |
-| `/sales-orders` | `POST`, `GET /{id}` |
+| `/purchase-orders` | `POST`, `GET` (filtros `desde`/`hasta`), `GET /{id}` |
+| `/sales-orders` | `POST`, `GET` (filtros `desde`/`hasta`), `GET /{id}` |
 | `/stock-movements` | `POST /inbound` · `/outbound` · `/returns` · `/adjustments`, `GET /variants/{id}`, `GET /low-stock` |
 | `/reports` | `GET /summary` · `/top-products` · `/grouped-sales` · `/low-stock` · `/stale-stock` |
 | `/assistant` | `POST`, `GET /history` |
@@ -151,13 +168,49 @@ la creación de una empresa nueva.
 El detalle de cada endpoint, con ejemplos de body y respuesta, está en
 `postman_collection.json`.
 
+### Paginación
+
+Todos los listados son paginados y aceptan `page` (desde 0), `size` (por defecto 20, máximo 100) y `sort` (`campo,asc` o `campo,desc`, se puede repetir):
+
+```
+GET /api/v1/products?soloActivos=true&page=0&size=10&sort=precioVenta,desc
+GET /api/v1/sales-orders?desde=2026-09-01&hasta=2026-09-30&sort=total,desc
+```
+
+La respuesta siempre tiene la misma forma (`PageResponseDTO`):
+
+```json
+{
+  "content": [ { "id": 1, "codigo": "POL-001", "nombre": "Polo basico", "stockTotal": 36 } ],
+  "page": 0,
+  "size": 10,
+  "totalElements": 1,
+  "totalPages": 1,
+  "first": true,
+  "last": true,
+  "sort": "precioVenta: DESC"
+}
+```
+
+| Listado | Orden por defecto |
+|---|---|
+| `/users`, `/categories`, `/products`, `/clients` | `nombre` ascendente |
+| `/suppliers` | `razonSocial` ascendente |
+| `/products/{id}/variants` | `id` ascendente |
+| `/sales-orders`, `/purchase-orders` | `fechaEmision` descendente (lo más reciente primero) |
+| `/stock-movements/variants/{id}` (kardex), `/assistant/history` | `fecha` descendente |
+| `/stock-movements/low-stock` | `stock` ascendente (lo más urgente primero) |
+
+Si se pide un `size` mayor a 100 se usa 100, y un `sort` por un campo que no existe responde **400** con un mensaje claro. Los reportes (`/reports/*`) no se paginan porque devuelven agregados pequeños (el ranking ya tiene su propio `limite`). Para que mapear una página con sus detalles no dispare una consulta por fila, se configuró `hibernate.default_batch_fetch_size=50`.
+
 ## Manejo de Errores
 
 Un `@RestControllerAdvice` centraliza todas las excepciones y responde siempre en formato **ProblemDetail (RFC 9457)**: `status`, `title`, `detail`, `instance` (la ruta) y `timestamp`. Así el cliente recibe errores consistentes y nunca ve trazas internas.
 
 | Excepción | Código | Cuándo ocurre |
 |---|---|---|
-| `MethodArgumentNotValidException`, `HttpMessageNotReadableException`, `MethodArgumentTypeMismatchException`, `MissingServletRequestParameterException`, `InvalidOperationException` | 400 | Datos inválidos, JSON mal formado, parámetros faltantes o mal escritos, u operaciones no permitidas |
+| `MethodArgumentNotValidException`, `HttpMessageNotReadableException`, `MethodArgumentTypeMismatchException`, `MissingServletRequestParameterException`, `InvalidOperationException` | 400 | Datos inválidos, JSON mal formado, parámetros faltantes o mal escritos, u operaciones no permitidas (por ejemplo, `hasta` anterior a `desde`) |
+| `PropertyReferenceException`, `InvalidDataAccessApiUsageException` | 400 | Parámetro `sort` de un listado por un campo que no existe |
 | `BadCredentialsException`, `InvalidTokenException` | 401 | Email o contraseña incorrectos, o refresh token inválido |
 | `AccessDeniedException`, `ForbiddenException` | 403 | Rol insuficiente, o referencia a un recurso de otra empresa en el cuerpo |
 | `ResourceNotFoundException`, `NoResourceFoundException` | 404 | El recurso o la ruta no existe, o pertenece a otra empresa |
@@ -191,11 +244,16 @@ Manejarlos de forma global evita `try/catch` repetidos, garantiza códigos HTTP 
 
 El sistema publica **eventos de dominio** (`ApplicationEvent`) cuando ocurre algo importante, y los listeners reaccionan sin que el service que publica tenga que conocerlos:
 
-| Evento | Se publica en | Listener |
+| Evento | Se publica en | Listener(s) |
 |---|---|---|
-| `UserRegisteredEvent` | Registro del ADMIN y creación de empleados | Envía un correo de bienvenida con la plantilla `bienvenida.html` |
-| `SaleRegisteredEvent` | Cada venta completada | Revisa las variantes vendidas y, si alguna quedó en su stock mínimo o por debajo, avisa al ADMIN con `stock-bajo.html` |
-| `PurchaseRegisteredEvent` | Cada compra registrada | Envía al ADMIN la confirmación con el detalle y el total (`compra-registrada.html`) |
+| `UserRegisteredEvent` | Registro del ADMIN y creación de empleados (`AuthService`, `UserService`) | `WelcomeListener`: correo de bienvenida (`bienvenida.html`) |
+| `UserDeletedEvent` | Un ADMIN elimina a un empleado (`UserService`) | `AccountRemovedListener`: avisa al empleado que su acceso fue retirado (`cuenta-eliminada.html`) |
+| `SaleRegisteredEvent` | Cada venta completada (`SalesOrderService`) | `LowStockListener`: si alguna variante vendida quedó en su stock mínimo, avisa al ADMIN (`stock-bajo.html`). `SaleReceiptListener`: si el cliente tiene correo, le envía el detalle de su compra (`comprobante-venta.html`) |
+| `PurchaseRegisteredEvent` | Cada compra registrada (`PurchaseOrderService`) | `PurchaseRegisteredListener`: confirmación al ADMIN con el detalle y el total (`compra-registrada.html`) |
+| `StockMovementRegisteredEvent` | Entrada, salida, devolución o ajuste manual de inventario (`StockMovementService`) | `StockAdjustmentListener`: en los ajustes por conteo físico avisa al ADMIN la diferencia, el motivo y quién lo hizo (`ajuste-stock.html`), porque un faltante puede ser merma o robo. `LowStockListener`: si el movimiento bajó el stock al mínimo, envía la alerta de stock bajo |
+| `ProductPriceChangedEvent` | `PUT` o `PATCH` de un producto que cambia el precio de venta o el costo (`ProductService`) | `PriceChangeListener`: avisa al ADMIN los precios y el margen antes y después (`cambio-precio.html`) |
+
+Los eventos llevan **copias de los datos** (ids, nombres, montos), no entidades, porque el listener corre en otro hilo sin sesión de Hibernate. Un mismo evento puede tener varios listeners independientes (la venta dispara la alerta de stock y la constancia al cliente) y un listener puede escuchar varios eventos (`LowStockListener`), sin que los services se conozcan entre sí.
 
 Los listeners usan `@TransactionalEventListener(phase = AFTER_COMMIT)`, así que solo actúan si la operación se guardó, y son `@Async`: corren en un `ThreadPoolTaskExecutor` propio habilitado con `@EnableAsync`.
 
@@ -203,7 +261,7 @@ Los listeners usan `@TransactionalEventListener(phase = AFTER_COMMIT)`, así que
 
 ## GitHub & Management
 
-- **Organización:** cada integrante trabajó en su propia rama (`Gabriel`, `hector`, `indira`, `javier`, `rafael`) y los cambios llegaron a `main` mediante **Pull Requests** (más de 20). [Completar: si usaron GitHub Projects o Issues, describir el tablero, la asignación de tareas y las fechas límite.]
+- **Organización:** cada integrante trabajó en su propia rama (`Gabriel`, `hector`, `indira`, `javier`, `rafael`) y los cambios llegaron a `main` mediante **Pull Requests** (más de 20), revisados por el equipo antes del merge.
 - **Reparto:** Empresa y Proveedor; Órdenes de venta; Órdenes de compra; Usuarios, seguridad y Clientes; Catálogo, inventario, reportes e IA.
 - **GitHub Actions:** el workflow `.github/workflows/ci.yml` se ejecuta en cada push y en cada Pull Request a `main`:
   1. levanta un contenedor PostgreSQL 16 como servicio;
@@ -211,7 +269,14 @@ Los listeners usan `@TransactionalEventListener(phase = AFTER_COMMIT)`, así que
   3. compila y ejecuta los tests con `./mvnw verify`.
 
   Si algo falla, el PR queda marcado en rojo antes de hacer merge.
-- **Tests:** 11 en total. `ProductVariantModelTest` cubre las reglas de stock, `AssistantServiceTest` cubre la cuota diaria, el bloqueo pesimista y la falta de clave de IA (con Mockito), y `contextLoads` levanta la aplicación completa contra PostgreSQL.
+- **Tests:** 23 en total.
+  - `ProductVariantModelTest`: reglas de stock de la entidad.
+  - `AssistantServiceTest`: cuota diaria, bloqueo pesimista y falta de clave de IA (Mockito).
+  - `ProductMapperTest`, `SalesOrderMapperTest`: los mappers aplanan relaciones, mapean los detalles y el PATCH ignora los `null`.
+  - `ProductServiceTest`: un cambio de precio publica `ProductPriceChangedEvent` y un mismo precio con otra escala (25 vs 25.00) no.
+  - `StockMovementServiceTest`: un ajuste publica `StockMovementRegisteredEvent` con la diferencia correcta.
+  - `PriceChangeListenerTest`, `PageResponseDTOTest`: cálculo del margen y forma de la respuesta paginada.
+  - `contextLoads`: levanta la aplicación completa contra PostgreSQL.
 
 ## Ejecución local y despliegue
 
@@ -220,9 +285,15 @@ Los listeners usan `@TransactionalEventListener(phase = AFTER_COMMIT)`, así que
 3. Ejecutar la aplicación: `./mvnw spring-boot:run`, que queda en `http://localhost:8080`.
 4. Importar `postman_collection.json` (en la raíz) y ejecutar las carpetas en orden.
 
+### Esquema de la base de datos y persistencia
+- `spring.jpa.hibernate.ddl-auto` usa **`update`** (configurable con la variable `DDL_AUTO`): al arrancar, Hibernate solo crea las tablas, columnas e índices que falten y **nunca borra datos**. Antes se usaba `create-drop`, que eliminaba la base en cada reinicio; ahora reiniciar o redesplegar la aplicación conserva empresas, ventas y kardex.
+- PostgreSQL guarda sus archivos en el volumen de Docker `pgdata` (definido en `docker-compose.yaml`), así que los datos sobreviven también a reinicios del contenedor, de la instancia y a `docker compose down`. Solo `docker compose down -v` borra el volumen.
+- `spring.sql.init.mode=never`: no se ejecutan scripts SQL al arrancar, para no duplicar datos.
+
 ### Despliegue en AWS
-- **Infraestructura:** instancia **EC2** (Amazon Linux, región `us-east-1`) con acceso SSH mediante EC2 Instance Connect y un *security group* que expone el puerto HTTP 80. Base de datos: **[confirmar: Amazon RDS o PostgreSQL en la instancia]**.
-- **Proceso:** se clona el repositorio en la instancia, se compila con `./mvnw clean package` y se ejecuta el `.jar` con las variables de entorno de producción (`DB_*`, `JWT_SECRET`, `GEMINI_API_KEY`, `PORT=80`). También se incluye un `Dockerfile` multi-etapa para desplegar como contenedor.
+- **Infraestructura:** instancia **EC2** (Amazon Linux, región `us-east-1`) con acceso SSH mediante EC2 Instance Connect y un *security group* que expone el puerto HTTP 80.
+- **Base de datos:** **PostgreSQL 16 en un contenedor Docker dentro de la misma instancia EC2**, levantado con el `docker-compose.yaml` del repositorio (imagen `postgres:16-alpine`, volumen persistente `pgdata`). La aplicación se conecta por `localhost:5432` (`DB_HOST=localhost`). El puerto 5432 no está abierto en el *security group*, así que la base no es accesible desde Internet; solo la aplicación de la propia instancia llega a ella. Frente a Amazon RDS, esta opción evita un servicio adicional con su propio costo y configuración de red, y basta para el volumen de datos del proyecto.
+- **Proceso:** se clona el repositorio en la instancia, se levanta la base con `docker compose up -d`, se compila con `./mvnw clean package` y se ejecuta el `.jar` con las variables de entorno de producción (`DB_*`, `DDL_AUTO=update`, `JWT_SECRET`, `GEMINI_API_KEY`, `PORT=80`). También se incluye un `Dockerfile` multi-etapa para desplegar como contenedor.
 - **URL pública:** `http://ec2-32-192-242-54.compute-1.amazonaws.com/api/v1`
 - **Evidencia:** la carpeta `AWS/` contiene capturas, un video de las pruebas y la colección de Postman apuntando al servidor.
 
@@ -241,7 +312,8 @@ Se construyó y desplegó un backend que modela la realidad de un minorista de G
 - Entidad de gastos (alquiler, sueldos) para calcular la utilidad neta.
 - Recuperación de contraseña por correo y revocación de refresh tokens para un cierre de sesión real.
 - Anulación de ventas, pagos mixtos y comprobantes electrónicos SUNAT.
-- Paginación en los listados y documentación con Swagger/OpenAPI.
+- Documentación interactiva con Swagger/OpenAPI.
+- Migraciones versionadas con Flyway y `ddl-auto=validate`, para controlar cada cambio de esquema en producción.
 - Frontend web y móvil.
 
 ## Apéndices

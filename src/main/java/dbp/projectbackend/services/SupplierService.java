@@ -1,24 +1,26 @@
 package dbp.projectbackend.services;
 
 import dbp.projectbackend.dtos.request.SupplierDTO;
+import dbp.projectbackend.dtos.response.PageResponseDTO;
 import dbp.projectbackend.dtos.response.SupplierResponseDTO;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
+import dbp.projectbackend.mappers.SupplierMapper;
 import dbp.projectbackend.models.EnterpriseModel;
 import dbp.projectbackend.models.SupplierModel;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.repositories.EnterpriseRepository;
 import dbp.projectbackend.repositories.SupplierRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @RequiredArgsConstructor
 @Service
 public class SupplierService {
     private final SupplierRepository supplierRepository;
     private final EnterpriseRepository enterpriseRepository;
+    private final SupplierMapper supplierMapper;
 
     @Transactional
     public SupplierResponseDTO createSupplier(UserModel currentUser, SupplierDTO dto) {
@@ -27,8 +29,7 @@ public class SupplierService {
         SupplierModel supplier = supplierRepository.findByRuc(dto.ruc())
                 .orElseGet(() -> {
                     SupplierModel nuevo = new SupplierModel(dto.ruc(), dto.razonSocial());
-                    nuevo.setTelefono(dto.telefono());
-                    nuevo.setCorreo(dto.correo());
+                    supplierMapper.updateEntity(dto, nuevo);
                     return supplierRepository.save(nuevo);
                 });
 
@@ -36,19 +37,19 @@ public class SupplierService {
             empresa.addSupplier(supplier);
         }
 
-        return toDTO(supplier);
+        return supplierMapper.toResponse(supplier);
     }
 
     @Transactional(readOnly = true)
     public SupplierResponseDTO getSupplierById(UserModel currentUser, Long id) {
-        return toDTO(findOwnedSupplier(currentUser, id));
+        return supplierMapper.toResponse(findOwnedSupplier(currentUser, id));
     }
 
     @Transactional(readOnly = true)
-    public List<SupplierResponseDTO> getSuppliersByEnterprise(UserModel currentUser) {
-        return supplierRepository.findByEmpresasId(currentUser.getEmpresa().getId()).stream()
-                .map(this::toDTO)
-                .toList();
+    public PageResponseDTO<SupplierResponseDTO> getSuppliersByEnterprise(UserModel currentUser, Pageable pageable) {
+        return PageResponseDTO.from(
+                supplierRepository.findByEmpresasId(currentUser.getEmpresa().getId(), pageable)
+                        .map(supplierMapper::toResponse));
     }
 
     private EnterpriseModel findEnterprise(UserModel currentUser) {
@@ -68,15 +69,5 @@ public class SupplierService {
             throw new ResourceNotFoundException("Proveedor con id " + id + " no encontrado.");
         }
         return supplier;
-    }
-
-    private SupplierResponseDTO toDTO(SupplierModel supplier) {
-        return new SupplierResponseDTO(
-                supplier.getId(),
-                supplier.getRuc(),
-                supplier.getRazonSocial(),
-                supplier.getTelefono(),
-                supplier.getCorreo()
-        );
     }
 }

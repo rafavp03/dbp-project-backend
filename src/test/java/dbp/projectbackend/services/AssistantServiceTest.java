@@ -3,6 +3,7 @@ package dbp.projectbackend.services;
 import dbp.projectbackend.enums.Role;
 import dbp.projectbackend.exceptions.AssistantUnavailableException;
 import dbp.projectbackend.exceptions.QueryLimitExceededException;
+import dbp.projectbackend.mappers.AiQueryMapper;
 import dbp.projectbackend.models.EnterpriseModel;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.repositories.AiQueryRepository;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mapstruct.factory.Mappers;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -50,7 +52,7 @@ class AssistantServiceTest {
 
     private AssistantService serviceConClave(String apiKey) {
         return new AssistantService(chatClientBuilder, reportService, auditService,
-                consultaRepository, userRepository, LIMITE, apiKey);
+                consultaRepository, userRepository, Mappers.getMapper(AiQueryMapper.class), LIMITE, apiKey);
     }
 
     private void cuotaConsumida(long consultasHoy) {

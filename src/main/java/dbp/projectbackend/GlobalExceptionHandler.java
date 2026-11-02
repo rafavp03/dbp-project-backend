@@ -4,6 +4,8 @@ import dbp.projectbackend.exceptions.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -115,6 +117,26 @@ public class GlobalExceptionHandler {
         String tipo = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "el tipo esperado";
         return build(400, "Type Mismatch",
                 "El parámetro \"" + ex.getName() + "\" debe ser de tipo " + tipo + ".", request);
+    }
+
+    @ExceptionHandler({PropertyReferenceException.class})
+    public ProblemDetail invalidSortHandler(PropertyReferenceException ex, HttpServletRequest request){
+        return build(400, "Invalid Sort Parameter", invalidSortMessage(ex), request);
+    }
+
+    @ExceptionHandler({InvalidDataAccessApiUsageException.class})
+    public ProblemDetail invalidDataAccessHandler(InvalidDataAccessApiUsageException ex, HttpServletRequest request){
+        if (ex.getMostSpecificCause() instanceof PropertyReferenceException propertyEx) {
+            return build(400, "Invalid Sort Parameter", invalidSortMessage(propertyEx), request);
+        }
+        log.warn("Uso inválido de la capa de datos en {} {}: {}",
+                request.getMethod(), request.getRequestURI(), ex.getMostSpecificCause().getMessage());
+        return build(400, "Invalid Request", "Los parámetros de la consulta no son válidos.", request);
+    }
+
+    private String invalidSortMessage(PropertyReferenceException ex) {
+        return "No se puede ordenar por \"" + ex.getPropertyName()
+                + "\": no es un campo del recurso. Usa sort=campo,asc o sort=campo,desc.";
     }
 
     @ExceptionHandler({MissingServletRequestParameterException.class})

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "ERP Gamarra - Backend",
-    "description": "API REST del ERP para minoristas de Gamarra (CS 2031 - DBP).\n\n**Como usarla**\n1. Levantar la app (`./run.sh` y `./mvnw spring-boot:run`) con el `.env` configurado.\n2. Ejecutar las carpetas **0 a 7 en orden** (o con el Collection Runner). Los ids y tokens se guardan solos en las variables de la coleccion.\n3. Los requests *Desactivar/Eliminar* conviene ejecutarlos al final.\n\n**Autorizacion:** Bearer Token a nivel de coleccion con `{{token}}` (se llena al registrar o hacer login). Los endpoints publicos usan *No Auth* y los de prueba de rol usan `{{tokenEmpleado}}`.\n\n**Errores:** todas las respuestas de error siguen el formato ProblemDetail (status, title, detail, instance, timestamp).",
+    "description": "API REST del ERP para minoristas de Gamarra (CS 2031 - DBP).\n\n**Como usarla**\n1. Levantar la app (`./run.sh` y `./mvnw spring-boot:run`) con el `.env` configurado.\n2. Ejecutar las carpetas **0 a 7 en orden** (o con el Collection Runner). Los ids y tokens se guardan solos en las variables de la coleccion.\n3. Los requests *Desactivar/Eliminar* conviene ejecutarlos al final.\n\n**Autorizacion:** Bearer Token a nivel de coleccion con `{{token}}` (se llena al registrar o hacer login). Los endpoints publicos usan *No Auth* y los de prueba de rol usan `{{tokenEmpleado}}`.\n\n**Errores:** todas las respuestas de error siguen el formato ProblemDetail (status, title, detail, instance, timestamp).\n\n**Paginacion:** todos los listados devuelven `PageResponseDTO` (`content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`) y aceptan `page`, `size` (max. 100) y `sort=campo,asc|desc`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -943,15 +943,29 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/users",
+              "raw": "{{baseUrl}}/users?page=0&size=20&sort=nombre,asc",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "nombre,asc"
+                }
               ]
             },
-            "description": "Usuarios de la empresa del ADMIN."
+            "description": "Usuarios de la empresa del ADMIN.\n\nRespuesta **paginada** (`PageResponseDTO`): `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`. Parametros opcionales: `page` (desde 0), `size` (por defecto 20, maximo 100) y `sort=campo,asc|desc`."
           },
           "event": [
             {
@@ -959,7 +973,13 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Respuesta paginada\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"content\").that.is.an(\"array\");",
+                  "    pm.expect(body).to.include.all.keys(\"page\", \"size\", \"totalElements\", \"totalPages\", \"first\", \"last\", \"sort\");",
+                  "    pm.expect(body.size).to.be.at.most(100);",
+                  "});"
                 ]
               }
             }
@@ -971,15 +991,29 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/users",
+                  "raw": "{{baseUrl}}/users?page=0&size=20&sort=nombre,asc",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "users"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "nombre,asc"
+                    }
                   ]
                 },
-                "description": "Usuarios de la empresa del ADMIN."
+                "description": "Usuarios de la empresa del ADMIN.\n\nRespuesta **paginada** (`PageResponseDTO`): `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`. Parametros opcionales: `page` (desde 0), `size` (por defecto 20, maximo 100) y `sort=campo,asc|desc`."
               },
               "status": "OK",
               "code": 200,
@@ -990,7 +1024,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n  {\n    \"id\": 1,\n    \"nombre\": \"Rosa Quispe\",\n    \"email\": \"rosa@modagamarra.pe\",\n    \"role\": \"ADMIN\",\n    \"empresaId\": 1\n  },\n  {\n    \"id\": 2,\n    \"nombre\": \"Luis Mamani\",\n    \"email\": \"luis@modagamarra.pe\",\n    \"role\": \"EMPLEADO\",\n    \"empresaId\": 1\n  }\n]"
+              "body": "{\n  \"content\": [\n    {\n      \"id\": 1,\n      \"nombre\": \"Rosa Quispe\",\n      \"email\": \"rosa@modagamarra.pe\",\n      \"role\": \"ADMIN\",\n      \"empresaId\": 1\n    },\n    {\n      \"id\": 2,\n      \"nombre\": \"Luis Mamani\",\n      \"email\": \"luis@modagamarra.pe\",\n      \"role\": \"EMPLEADO\",\n      \"empresaId\": 1\n    }\n  ],\n  \"page\": 0,\n  \"size\": 20,\n  \"totalElements\": 2,\n  \"totalPages\": 1,\n  \"first\": true,\n  \"last\": true,\n  \"sort\": \"nombre: ASC\"\n}"
             }
           ]
         },
@@ -1056,7 +1090,7 @@
                 "{{empleadoId}}"
               ]
             },
-            "description": "El ADMIN elimina a un usuario de su empresa (no puede eliminarse a si mismo). **Ejecutar al final**: invalida `tokenEmpleado`."
+            "description": "El ADMIN elimina a un usuario de su empresa (no puede eliminarse a si mismo). **Ejecutar al final**: invalida `tokenEmpleado`.\n\n**Evento:** `UserDeletedEvent`; el empleado recibe un correo avisando que su acceso fue retirado."
           },
           "event": [
             {
@@ -1267,15 +1301,29 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/categories",
+              "raw": "{{baseUrl}}/categories?page=0&size=20&sort=nombre,asc",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "categories"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "nombre,asc"
+                }
               ]
             },
-            "description": "Categorias activas de la empresa."
+            "description": "Categorias de la empresa (activas e inactivas).\n\nRespuesta **paginada** (`PageResponseDTO`): `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`. Parametros opcionales: `page` (desde 0), `size` (por defecto 20, maximo 100) y `sort=campo,asc|desc`."
           },
           "event": [
             {
@@ -1283,7 +1331,13 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Respuesta paginada\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"content\").that.is.an(\"array\");",
+                  "    pm.expect(body).to.include.all.keys(\"page\", \"size\", \"totalElements\", \"totalPages\", \"first\", \"last\", \"sort\");",
+                  "    pm.expect(body.size).to.be.at.most(100);",
+                  "});"
                 ]
               }
             }
@@ -1295,15 +1349,29 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/categories",
+                  "raw": "{{baseUrl}}/categories?page=0&size=20&sort=nombre,asc",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "categories"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "nombre,asc"
+                    }
                   ]
                 },
-                "description": "Categorias activas de la empresa."
+                "description": "Categorias de la empresa (activas e inactivas).\n\nRespuesta **paginada** (`PageResponseDTO`): `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`. Parametros opcionales: `page` (desde 0), `size` (por defecto 20, maximo 100) y `sort=campo,asc|desc`."
               },
               "status": "OK",
               "code": 200,
@@ -1314,7 +1382,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n  {\n    \"id\": 1,\n    \"nombre\": \"Polos\",\n    \"descripcion\": \"Polos de algodon\",\n    \"activo\": true,\n    \"empresaId\": 1\n  }\n]"
+              "body": "{\n  \"content\": [\n    {\n      \"id\": 1,\n      \"nombre\": \"Polos\",\n      \"descripcion\": \"Polos de algodon\",\n      \"activo\": true,\n      \"empresaId\": 1\n    }\n  ],\n  \"page\": 0,\n  \"size\": 20,\n  \"totalElements\": 1,\n  \"totalPages\": 1,\n  \"first\": true,\n  \"last\": true,\n  \"sort\": \"nombre: ASC\"\n}"
             }
           ]
         },
@@ -1581,7 +1649,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/products?soloActivos=true",
+              "raw": "{{baseUrl}}/products?soloActivos=true&page=0&size=20&sort=nombre,asc",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1592,10 +1660,22 @@
                 {
                   "key": "soloActivos",
                   "value": "true"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "nombre,asc"
                 }
               ]
             },
-            "description": "Productos de la empresa con su stock total (suma de todas sus variantes)."
+            "description": "Productos de la empresa con su stock total (suma de todas sus variantes).\n\nRespuesta **paginada** (`PageResponseDTO`): `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`. Parametros opcionales: `page` (desde 0), `size` (por defecto 20, maximo 100) y `sort=campo,asc|desc`."
           },
           "event": [
             {
@@ -1603,7 +1683,13 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Respuesta paginada\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"content\").that.is.an(\"array\");",
+                  "    pm.expect(body).to.include.all.keys(\"page\", \"size\", \"totalElements\", \"totalPages\", \"first\", \"last\", \"sort\");",
+                  "    pm.expect(body.size).to.be.at.most(100);",
+                  "});"
                 ]
               }
             }
@@ -1615,7 +1701,7 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/products?soloActivos=true",
+                  "raw": "{{baseUrl}}/products?soloActivos=true&page=0&size=20&sort=nombre,asc",
                   "host": [
                     "{{baseUrl}}"
                   ],
@@ -1626,10 +1712,22 @@
                     {
                       "key": "soloActivos",
                       "value": "true"
+                    },
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "nombre,asc"
                     }
                   ]
                 },
-                "description": "Productos de la empresa con su stock total (suma de todas sus variantes)."
+                "description": "Productos de la empresa con su stock total (suma de todas sus variantes).\n\nRespuesta **paginada** (`PageResponseDTO`): `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`. Parametros opcionales: `page` (desde 0), `size` (por defecto 20, maximo 100) y `sort=campo,asc|desc`."
               },
               "status": "OK",
               "code": 200,
@@ -1640,7 +1738,77 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n  {\n    \"id\": 1,\n    \"codigo\": \"POL-001\",\n    \"nombre\": \"Polo basico cuello redondo\",\n    \"descripcion\": \"Algodon 30/1\",\n    \"unidadMedida\": \"UNIDAD\",\n    \"precioCompra\": 12.0,\n    \"precioVenta\": 25.0,\n    \"activo\": true,\n    \"categoriaId\": 1,\n    \"categoriaNombre\": \"Polos\",\n    \"empresaId\": 1,\n    \"stockTotal\": 36\n  }\n]"
+              "body": "{\n  \"content\": [\n    {\n      \"id\": 1,\n      \"codigo\": \"POL-001\",\n      \"nombre\": \"Polo basico cuello redondo\",\n      \"descripcion\": \"Algodon 30/1\",\n      \"unidadMedida\": \"UNIDAD\",\n      \"precioCompra\": 12.0,\n      \"precioVenta\": 25.0,\n      \"activo\": true,\n      \"categoriaId\": 1,\n      \"categoriaNombre\": \"Polos\",\n      \"empresaId\": 1,\n      \"stockTotal\": 36\n    }\n  ],\n  \"page\": 0,\n  \"size\": 20,\n  \"totalElements\": 1,\n  \"totalPages\": 1,\n  \"first\": true,\n  \"last\": true,\n  \"sort\": \"nombre: ASC\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Ordenar por campo inexistente (400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products?sort=campoQueNoExiste,asc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "campoQueNoExiste,asc"
+                }
+              ]
+            },
+            "description": "Un `sort` por un campo que no existe en el recurso responde 400 con un mensaje claro, no 500."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Explica el campo invalido\", () => pm.expect(pm.response.json().detail).to.include(\"campoQueNoExiste\"));"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "400 Sort invalido",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/products?sort=campoQueNoExiste,asc",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "products"
+                  ],
+                  "query": [
+                    {
+                      "key": "sort",
+                      "value": "campoQueNoExiste,asc"
+                    }
+                  ]
+                },
+                "description": "Un `sort` por un campo que no existe en el recurso responde 400 con un mensaje claro, no 500."
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Invalid Sort Parameter\",\n  \"status\": 400,\n  \"detail\": \"No se puede ordenar por \\\"campoQueNoExiste\\\": no es un campo del recurso. Usa sort=campo,asc o sort=campo,desc.\",\n  \"instance\": \"/api/v1/products\",\n  \"timestamp\": \"2026-11-02T15:00:00Z\"\n}"
             }
           ]
         },
@@ -1751,7 +1919,7 @@
                 "{{productoId}}"
               ]
             },
-            "description": "Actualiza datos y precios. Las ventas anteriores conservan el costo y precio de su momento.",
+            "description": "Actualiza datos y precios. Las ventas anteriores conservan el costo y precio de su momento.\n\n**Evento:** si cambia `precioVenta` o `precioCompra` se publica `ProductPriceChangedEvent` (correo al ADMIN con el margen antes y despues).",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"codigo\": \"POL-001\",\n  \"nombre\": \"Polo basico cuello redondo\",\n  \"descripcion\": \"Algodon 30/1\",\n  \"unidadMedida\": \"UNIDAD\",\n  \"precioCompra\": 12.5,\n  \"precioVenta\": 25.0,\n  \"categoriaId\": {{categoriaId}}\n}",
@@ -1958,7 +2126,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/products/{{productoId}}/variants",
+              "raw": "{{baseUrl}}/products/{{productoId}}/variants?page=0&size=20&sort=id,asc",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1966,9 +2134,23 @@
                 "products",
                 "{{productoId}}",
                 "variants"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "id,asc"
+                }
               ]
             },
-            "description": "Todas las tallas y colores de un producto con su stock."
+            "description": "Todas las tallas y colores de un producto con su stock.\n\nRespuesta **paginada** (`PageResponseDTO`): `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`. Parametros opcionales: `page` (desde 0), `size` (por defecto 20, maximo 100) y `sort=campo,asc|desc`."
           },
           "event": [
             {
@@ -1976,7 +2158,13 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Respuesta paginada\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"content\").that.is.an(\"array\");",
+                  "    pm.expect(body).to.include.all.keys(\"page\", \"size\", \"totalElements\", \"totalPages\", \"first\", \"last\", \"sort\");",
+                  "    pm.expect(body.size).to.be.at.most(100);",
+                  "});"
                 ]
               }
             }
@@ -1988,7 +2176,7 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/products/{{productoId}}/variants",
+                  "raw": "{{baseUrl}}/products/{{productoId}}/variants?page=0&size=20&sort=id,asc",
                   "host": [
                     "{{baseUrl}}"
                   ],
@@ -1996,9 +2184,23 @@
                     "products",
                     "{{productoId}}",
                     "variants"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "id,asc"
+                    }
                   ]
                 },
-                "description": "Todas las tallas y colores de un producto con su stock."
+                "description": "Todas las tallas y colores de un producto con su stock.\n\nRespuesta **paginada** (`PageResponseDTO`): `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`. Parametros opcionales: `page` (desde 0), `size` (por defecto 20, maximo 100) y `sort=campo,asc|desc`."
               },
               "status": "OK",
               "code": 200,
@@ -2009,7 +2211,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n  {\n    \"id\": 1,\n    \"productoId\": 1,\n    \"productoNombre\": \"Polo basico cuello redondo\",\n    \"talla\": \"M\",\n    \"color\": \"Negro\",\n    \"sku\": \"POL-M-NEG\",\n    \"stock\": 24,\n    \"stockMinimo\": 5,\n    \"activo\": true,\n    \"stockBajo\": false\n  }\n]"
+              "body": "{\n  \"content\": [\n    {\n      \"id\": 1,\n      \"productoId\": 1,\n      \"productoNombre\": \"Polo basico cuello redondo\",\n      \"talla\": \"M\",\n      \"color\": \"Negro\",\n      \"sku\": \"POL-M-NEG\",\n      \"stock\": 24,\n      \"stockMinimo\": 5,\n      \"activo\": true,\n      \"stockBajo\": false\n    }\n  ],\n  \"page\": 0,\n  \"size\": 20,\n  \"totalElements\": 1,\n  \"totalPages\": 1,\n  \"first\": true,\n  \"last\": true,\n  \"sort\": \"id: ASC\"\n}"
             }
           ]
         },
@@ -2194,8 +2396,7 @@
                 "{{productoId}}"
               ]
             },
-            "description": "Actualizacion parcial: solo se aplican los campos que se envian, el resto queda igual. Util para cambiar solo el precio sin reenviar todo el producto. Si se manda `codigo` y ya existe otro con ese codigo en la empresa, responde 409."
-            ,
+            "description": "Actualizacion parcial: solo se aplican los campos que se envian, el resto queda igual. Util para cambiar solo el precio sin reenviar todo el producto. Si se manda `codigo` y ya existe otro con ese codigo en la empresa, responde 409.\n\n**Evento:** si cambia `precioVenta` o `precioCompra` se publica `ProductPriceChangedEvent` y el ADMIN recibe un correo con el precio y el margen antes y despues.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"precioVenta\": 79.90\n}",
@@ -2385,15 +2586,29 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/suppliers",
+              "raw": "{{baseUrl}}/suppliers?page=0&size=20&sort=razonSocial,asc",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "suppliers"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "razonSocial,asc"
+                }
               ]
             },
-            "description": "Proveedores de la empresa."
+            "description": "Proveedores de la empresa.\n\nRespuesta **paginada** (`PageResponseDTO`): `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`. Parametros opcionales: `page` (desde 0), `size` (por defecto 20, maximo 100) y `sort=campo,asc|desc`."
           },
           "event": [
             {
@@ -2401,7 +2616,13 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Respuesta paginada\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"content\").that.is.an(\"array\");",
+                  "    pm.expect(body).to.include.all.keys(\"page\", \"size\", \"totalElements\", \"totalPages\", \"first\", \"last\", \"sort\");",
+                  "    pm.expect(body.size).to.be.at.most(100);",
+                  "});"
                 ]
               }
             }
@@ -2413,15 +2634,29 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/suppliers",
+                  "raw": "{{baseUrl}}/suppliers?page=0&size=20&sort=razonSocial,asc",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "suppliers"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "razonSocial,asc"
+                    }
                   ]
                 },
-                "description": "Proveedores de la empresa."
+                "description": "Proveedores de la empresa.\n\nRespuesta **paginada** (`PageResponseDTO`): `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`. Parametros opcionales: `page` (desde 0), `size` (por defecto 20, maximo 100) y `sort=campo,asc|desc`."
               },
               "status": "OK",
               "code": 200,
@@ -2432,7 +2667,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n  {\n    \"id\": 1,\n    \"ruc\": \"20601234567\",\n    \"razonSocial\": \"Textil San Pedro EIRL\",\n    \"telefono\": \"987654321\",\n    \"correo\": \"ventas@textilsanpedro.pe\"\n  }\n]"
+              "body": "{\n  \"content\": [\n    {\n      \"id\": 1,\n      \"ruc\": \"20601234567\",\n      \"razonSocial\": \"Textil San Pedro EIRL\",\n      \"telefono\": \"987654321\",\n      \"correo\": \"ventas@textilsanpedro.pe\"\n    }\n  ],\n  \"page\": 0,\n  \"size\": 20,\n  \"totalElements\": 1,\n  \"totalPages\": 1,\n  \"first\": true,\n  \"last\": true,\n  \"sort\": \"razonSocial: ASC\"\n}"
             }
           ]
         },
@@ -2607,15 +2842,29 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/clients",
+              "raw": "{{baseUrl}}/clients?page=0&size=20&sort=nombre,asc",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "clients"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "nombre,asc"
+                }
               ]
             },
-            "description": "Clientes de la empresa."
+            "description": "Clientes de la empresa.\n\nRespuesta **paginada** (`PageResponseDTO`): `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`. Parametros opcionales: `page` (desde 0), `size` (por defecto 20, maximo 100) y `sort=campo,asc|desc`."
           },
           "event": [
             {
@@ -2623,7 +2872,13 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Respuesta paginada\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"content\").that.is.an(\"array\");",
+                  "    pm.expect(body).to.include.all.keys(\"page\", \"size\", \"totalElements\", \"totalPages\", \"first\", \"last\", \"sort\");",
+                  "    pm.expect(body.size).to.be.at.most(100);",
+                  "});"
                 ]
               }
             }
@@ -2635,15 +2890,29 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/clients",
+                  "raw": "{{baseUrl}}/clients?page=0&size=20&sort=nombre,asc",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "clients"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "nombre,asc"
+                    }
                   ]
                 },
-                "description": "Clientes de la empresa."
+                "description": "Clientes de la empresa.\n\nRespuesta **paginada** (`PageResponseDTO`): `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`. Parametros opcionales: `page` (desde 0), `size` (por defecto 20, maximo 100) y `sort=campo,asc|desc`."
               },
               "status": "OK",
               "code": 200,
@@ -2654,7 +2923,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n  {\n    \"id\": 1,\n    \"documento\": \"45678912\",\n    \"nombre\": \"Maria Torres\",\n    \"telefono\": \"912345678\",\n    \"correo\": \"maria@gmail.com\",\n    \"direccion\": \"Jr. Gamarra 123, La Victoria\",\n    \"empresaId\": 1\n  }\n]"
+              "body": "{\n  \"content\": [\n    {\n      \"id\": 1,\n      \"documento\": \"45678912\",\n      \"nombre\": \"Maria Torres\",\n      \"telefono\": \"912345678\",\n      \"correo\": \"maria@gmail.com\",\n      \"direccion\": \"Jr. Gamarra 123, La Victoria\",\n      \"empresaId\": 1\n    }\n  ],\n  \"page\": 0,\n  \"size\": 20,\n  \"totalElements\": 1,\n  \"totalPages\": 1,\n  \"first\": true,\n  \"last\": true,\n  \"sort\": \"nombre: ASC\"\n}"
             }
           ]
         },
@@ -3056,7 +3325,7 @@
                 "sales-orders"
               ]
             },
-            "description": "Venta con precio regateado (22 en lugar de 25). La diferencia queda registrada como **descuento** para los reportes.",
+            "description": "Venta con precio regateado (22 en lugar de 25). La diferencia queda registrada como **descuento** para los reportes.\n\n**Eventos:** `SaleRegisteredEvent` envia la constancia de compra al correo del cliente y, si alguna talla queda en su minimo, la alerta de stock bajo al ADMIN.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"clienteId\": {{clienteId}},\n  \"medioPago\": \"EFECTIVO\",\n  \"canal\": \"WHATSAPP\",\n  \"detalles\": [\n    {\n      \"varianteId\": {{varianteId}},\n      \"cantidad\": 3,\n      \"precioUnitario\": 22.0\n    },\n    {\n      \"varianteId\": {{varianteId2}},\n      \"cantidad\": 1,\n      \"precioUnitario\": 25.0\n    }\n  ]\n}",
@@ -3222,6 +3491,360 @@
               "body": "{\n  \"id\": 1,\n  \"empresaId\": 1,\n  \"clienteId\": null,\n  \"clienteNombre\": null,\n  \"fechaEmision\": \"2026-09-25T12:15:00\",\n  \"estado\": \"COMPLETADA\",\n  \"medioPago\": \"YAPE\",\n  \"canal\": \"TIENDA\",\n  \"total\": 50.0,\n  \"detalles\": [\n    {\n      \"id\": 1,\n      \"varianteId\": 1,\n      \"varianteDescripcion\": \"Polo basico cuello redondo - M - Negro\",\n      \"cantidad\": 2,\n      \"precioUnitario\": 25.0,\n      \"subtotal\": 50.0\n    }\n  ]\n}"
             }
           ]
+        },
+        {
+          "name": "Listar compras (paginado)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/purchase-orders?page=0&size=10&sort=fechaEmision,desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "purchase-orders"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "fechaEmision,desc"
+                }
+              ]
+            },
+            "description": "Compras de la empresa, de la mas reciente a la mas antigua.\n\nRespuesta **paginada** (`PageResponseDTO`): `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`. Parametros opcionales: `page` (desde 0), `size` (por defecto 20, maximo 100) y `sort=campo,asc|desc`. Filtros opcionales `desde` y `hasta` (yyyy-MM-dd, ambos inclusive)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Respuesta paginada\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"content\").that.is.an(\"array\");",
+                  "    pm.expect(body).to.include.all.keys(\"page\", \"size\", \"totalElements\", \"totalPages\", \"first\", \"last\", \"sort\");",
+                  "    pm.expect(body.size).to.be.at.most(100);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/purchase-orders?page=0&size=10&sort=fechaEmision,desc",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "purchase-orders"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "10"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "fechaEmision,desc"
+                    }
+                  ]
+                },
+                "description": "Compras de la empresa, de la mas reciente a la mas antigua.\n\nRespuesta **paginada** (`PageResponseDTO`): `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`. Parametros opcionales: `page` (desde 0), `size` (por defecto 20, maximo 100) y `sort=campo,asc|desc`. Filtros opcionales `desde` y `hasta` (yyyy-MM-dd, ambos inclusive)."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"content\": [\n    {\n      \"id\": 1,\n      \"empresaId\": 1,\n      \"proveedorId\": 1,\n      \"proveedorRazonSocial\": \"Textil San Pedro EIRL\",\n      \"fechaEmision\": \"2026-09-25T11:00:00\",\n      \"estado\": \"COMPLETADA\",\n      \"total\": 432.0,\n      \"detalles\": [\n        {\n          \"id\": 1,\n          \"varianteId\": 1,\n          \"varianteDescripcion\": \"Polo basico cuello redondo - M - Negro\",\n          \"cantidad\": 24,\n          \"precioUnitario\": 12.0,\n          \"subtotal\": 288.0\n        }\n      ]\n    }\n  ],\n  \"page\": 0,\n  \"size\": 10,\n  \"totalElements\": 1,\n  \"totalPages\": 1,\n  \"first\": true,\n  \"last\": true,\n  \"sort\": \"fechaEmision: DESC\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Listar ventas (paginado)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/sales-orders?page=0&size=10&sort=fechaEmision,desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sales-orders"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "fechaEmision,desc"
+                }
+              ]
+            },
+            "description": "Ventas de la empresa, de la mas reciente a la mas antigua.\n\nRespuesta **paginada** (`PageResponseDTO`): `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`. Parametros opcionales: `page` (desde 0), `size` (por defecto 20, maximo 100) y `sort=campo,asc|desc`. Filtros opcionales `desde` y `hasta` (yyyy-MM-dd, ambos inclusive)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Respuesta paginada\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"content\").that.is.an(\"array\");",
+                  "    pm.expect(body).to.include.all.keys(\"page\", \"size\", \"totalElements\", \"totalPages\", \"first\", \"last\", \"sort\");",
+                  "    pm.expect(body.size).to.be.at.most(100);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/sales-orders?page=0&size=10&sort=fechaEmision,desc",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sales-orders"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "10"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "fechaEmision,desc"
+                    }
+                  ]
+                },
+                "description": "Ventas de la empresa, de la mas reciente a la mas antigua.\n\nRespuesta **paginada** (`PageResponseDTO`): `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`. Parametros opcionales: `page` (desde 0), `size` (por defecto 20, maximo 100) y `sort=campo,asc|desc`. Filtros opcionales `desde` y `hasta` (yyyy-MM-dd, ambos inclusive)."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"content\": [\n    {\n      \"id\": 2,\n      \"empresaId\": 1,\n      \"clienteId\": 1,\n      \"clienteNombre\": \"Maria Torres\",\n      \"fechaEmision\": \"2026-09-25T12:30:00\",\n      \"estado\": \"COMPLETADA\",\n      \"medioPago\": \"PLIN\",\n      \"canal\": \"WHATSAPP\",\n      \"total\": 44.0,\n      \"detalles\": [\n        {\n          \"id\": 2,\n          \"varianteId\": 1,\n          \"varianteDescripcion\": \"Polo basico cuello redondo - M - Negro\",\n          \"cantidad\": 2,\n          \"precioUnitario\": 22.0,\n          \"subtotal\": 44.0\n        }\n      ]\n    }\n  ],\n  \"page\": 0,\n  \"size\": 10,\n  \"totalElements\": 1,\n  \"totalPages\": 1,\n  \"first\": true,\n  \"last\": true,\n  \"sort\": \"fechaEmision: DESC\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Ventas de un rango de fechas, mayor total primero",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/sales-orders?desde=2026-01-01&hasta=2026-12-31&sort=total,desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sales-orders"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "2026-01-01"
+                },
+                {
+                  "key": "hasta",
+                  "value": "2026-12-31"
+                },
+                {
+                  "key": "sort",
+                  "value": "total,desc"
+                }
+              ]
+            },
+            "description": "Combina filtro por fecha de emision con orden por total descendente."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Respuesta paginada\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"content\").that.is.an(\"array\");",
+                  "    pm.expect(body).to.include.all.keys(\"page\", \"size\", \"totalElements\", \"totalPages\", \"first\", \"last\", \"sort\");",
+                  "    pm.expect(body.size).to.be.at.most(100);",
+                  "});",
+                  "pm.test(\"Ordenadas por total descendente\", () => {",
+                  "    const totales = pm.response.json().content.map(v => v.total);",
+                  "    pm.expect(totales).to.eql([...totales].sort((a, b) => b - a));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/sales-orders?desde=2026-01-01&hasta=2026-12-31&sort=total,desc",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sales-orders"
+                  ],
+                  "query": [
+                    {
+                      "key": "desde",
+                      "value": "2026-01-01"
+                    },
+                    {
+                      "key": "hasta",
+                      "value": "2026-12-31"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "total,desc"
+                    }
+                  ]
+                },
+                "description": "Combina filtro por fecha de emision con orden por total descendente."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"content\": [\n    {\n      \"id\": 2,\n      \"empresaId\": 1,\n      \"clienteId\": 1,\n      \"clienteNombre\": \"Maria Torres\",\n      \"fechaEmision\": \"2026-09-25T12:30:00\",\n      \"estado\": \"COMPLETADA\",\n      \"medioPago\": \"PLIN\",\n      \"canal\": \"WHATSAPP\",\n      \"total\": 44.0,\n      \"detalles\": [\n        {\n          \"id\": 2,\n          \"varianteId\": 1,\n          \"varianteDescripcion\": \"Polo basico cuello redondo - M - Negro\",\n          \"cantidad\": 2,\n          \"precioUnitario\": 22.0,\n          \"subtotal\": 44.0\n        }\n      ]\n    }\n  ],\n  \"page\": 0,\n  \"size\": 20,\n  \"totalElements\": 1,\n  \"totalPages\": 1,\n  \"first\": true,\n  \"last\": true,\n  \"sort\": \"total: DESC\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Rango de fechas invertido (400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/sales-orders?desde=2026-12-31&hasta=2026-01-01",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sales-orders"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "2026-12-31"
+                },
+                {
+                  "key": "hasta",
+                  "value": "2026-01-01"
+                }
+              ]
+            },
+            "description": "`hasta` anterior a `desde` es una operacion invalida."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "400 Rango invalido",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/sales-orders?desde=2026-12-31&hasta=2026-01-01",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sales-orders"
+                  ],
+                  "query": [
+                    {
+                      "key": "desde",
+                      "value": "2026-12-31"
+                    },
+                    {
+                      "key": "hasta",
+                      "value": "2026-01-01"
+                    }
+                  ]
+                },
+                "description": "`hasta` anterior a `desde` es una operacion invalida."
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Invalid Operation\",\n  \"status\": 400,\n  \"detail\": \"La fecha 'hasta' no puede ser anterior a 'desde'.\",\n  \"instance\": \"/api/v1/sales-orders\",\n  \"timestamp\": \"2026-11-02T15:00:00Z\"\n}"
+            }
+          ]
         }
       ]
     },
@@ -3336,7 +3959,7 @@
                 "outbound"
               ]
             },
-            "description": "Egreso sin venta (merma, prenda fallada).",
+            "description": "Egreso sin venta (merma, prenda fallada).\n\n**Evento:** `StockMovementRegisteredEvent`; si la variante queda en su stock minimo, el ADMIN recibe la alerta de stock bajo.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"varianteId\": {{varianteId}},\n  \"cantidad\": 1,\n  \"motivo\": \"Prenda fallada\"\n}",
@@ -3422,7 +4045,7 @@
                 "adjustments"
               ]
             },
-            "description": "Fija el stock al valor contado fisicamente. Aqui deja S Blanco por debajo de su minimo.",
+            "description": "Fija el stock al valor contado fisicamente. Aqui deja S Blanco por debajo de su minimo.\n\n**Evento:** `StockMovementRegisteredEvent`; el ADMIN recibe un correo con el stock anterior, el contado, la diferencia y quien hizo el ajuste.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"varianteId\": {{varianteId2}},\n  \"nuevoStock\": 2,\n  \"motivo\": \"Inventario del sabado\"\n}",
@@ -3451,7 +4074,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/stock-movements/variants/{{varianteId}}",
+              "raw": "{{baseUrl}}/stock-movements/variants/{{varianteId}}?page=0&size=20&sort=fecha,desc",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -3459,9 +4082,23 @@
                 "stock-movements",
                 "variants",
                 "{{varianteId}}"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "fecha,desc"
+                }
               ]
             },
-            "description": "Historial completo de movimientos de una talla y color, del mas reciente al mas antiguo."
+            "description": "Historial completo de movimientos de una talla y color, del mas reciente al mas antiguo.\n\nRespuesta **paginada** (`PageResponseDTO`): `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`. Parametros opcionales: `page` (desde 0), `size` (por defecto 20, maximo 100) y `sort=campo,asc|desc`."
           },
           "event": [
             {
@@ -3469,7 +4106,13 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Respuesta paginada\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"content\").that.is.an(\"array\");",
+                  "    pm.expect(body).to.include.all.keys(\"page\", \"size\", \"totalElements\", \"totalPages\", \"first\", \"last\", \"sort\");",
+                  "    pm.expect(body.size).to.be.at.most(100);",
+                  "});"
                 ]
               }
             }
@@ -3481,7 +4124,7 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/stock-movements/variants/{{varianteId}}",
+                  "raw": "{{baseUrl}}/stock-movements/variants/{{varianteId}}?page=0&size=20&sort=fecha,desc",
                   "host": [
                     "{{baseUrl}}"
                   ],
@@ -3489,9 +4132,23 @@
                     "stock-movements",
                     "variants",
                     "{{varianteId}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "fecha,desc"
+                    }
                   ]
                 },
-                "description": "Historial completo de movimientos de una talla y color, del mas reciente al mas antiguo."
+                "description": "Historial completo de movimientos de una talla y color, del mas reciente al mas antiguo.\n\nRespuesta **paginada** (`PageResponseDTO`): `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`. Parametros opcionales: `page` (desde 0), `size` (por defecto 20, maximo 100) y `sort=campo,asc|desc`."
               },
               "status": "OK",
               "code": 200,
@@ -3502,7 +4159,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n  {\n    \"id\": 5,\n    \"varianteId\": 1,\n    \"varianteDescripcion\": \"Polo basico cuello redondo - M - Negro\",\n    \"tipo\": \"ENTRADA\",\n    \"cantidad\": 5,\n    \"stockAnterior\": 19,\n    \"stockResultante\": 24,\n    \"motivo\": \"Mercaderia de feria\",\n    \"fecha\": \"2026-09-25T13:00:00\"\n  }\n]"
+              "body": "{\n  \"content\": [\n    {\n      \"id\": 5,\n      \"varianteId\": 1,\n      \"varianteDescripcion\": \"Polo basico cuello redondo - M - Negro\",\n      \"tipo\": \"ENTRADA\",\n      \"cantidad\": 5,\n      \"stockAnterior\": 19,\n      \"stockResultante\": 24,\n      \"motivo\": \"Mercaderia de feria\",\n      \"fecha\": \"2026-09-25T13:00:00\"\n    }\n  ],\n  \"page\": 0,\n  \"size\": 20,\n  \"totalElements\": 1,\n  \"totalPages\": 1,\n  \"first\": true,\n  \"last\": true,\n  \"sort\": \"fecha: DESC\"\n}"
             }
           ]
         },
@@ -3512,16 +4169,30 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/stock-movements/low-stock",
+              "raw": "{{baseUrl}}/stock-movements/low-stock?page=0&size=20&sort=stock,asc",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "stock-movements",
                 "low-stock"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "stock,asc"
+                }
               ]
             },
-            "description": "Variantes en su stock minimo o por debajo: lo que hay que reponer."
+            "description": "Variantes en su stock minimo o por debajo: lo que hay que reponer.\n\nRespuesta **paginada** (`PageResponseDTO`): `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`. Parametros opcionales: `page` (desde 0), `size` (por defecto 20, maximo 100) y `sort=campo,asc|desc`."
           },
           "event": [
             {
@@ -3529,7 +4200,13 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Respuesta paginada\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"content\").that.is.an(\"array\");",
+                  "    pm.expect(body).to.include.all.keys(\"page\", \"size\", \"totalElements\", \"totalPages\", \"first\", \"last\", \"sort\");",
+                  "    pm.expect(body.size).to.be.at.most(100);",
+                  "});"
                 ]
               }
             }
@@ -4658,16 +5335,30 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/assistant/history",
+              "raw": "{{baseUrl}}/assistant/history?page=0&size=20&sort=fecha,desc",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "assistant",
                 "history"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "fecha,desc"
+                }
               ]
             },
-            "description": "Ultimas 20 preguntas del usuario (solo las propias)."
+            "description": "Preguntas del usuario (solo las propias), de la mas reciente a la mas antigua.\n\nRespuesta **paginada** (`PageResponseDTO`): `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`. Parametros opcionales: `page` (desde 0), `size` (por defecto 20, maximo 100) y `sort=campo,asc|desc`."
           },
           "event": [
             {
@@ -4675,7 +5366,13 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Respuesta paginada\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"content\").that.is.an(\"array\");",
+                  "    pm.expect(body).to.include.all.keys(\"page\", \"size\", \"totalElements\", \"totalPages\", \"first\", \"last\", \"sort\");",
+                  "    pm.expect(body.size).to.be.at.most(100);",
+                  "});"
                 ]
               }
             }
@@ -4687,16 +5384,30 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/assistant/history",
+                  "raw": "{{baseUrl}}/assistant/history?page=0&size=20&sort=fecha,desc",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "assistant",
                     "history"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "fecha,desc"
+                    }
                   ]
                 },
-                "description": "Ultimas 20 preguntas del usuario (solo las propias)."
+                "description": "Ultimas 20 preguntas del usuario (solo las propias).\n\nRespuesta **paginada** (`PageResponseDTO`): `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `sort`. Parametros opcionales: `page` (desde 0), `size` (por defecto 20, maximo 100) y `sort=campo,asc|desc`."
               },
               "status": "OK",
               "code": 200,
@@ -4707,7 +5418,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n  {\n    \"id\": 1,\n    \"pregunta\": \"¿Cuánto vendí esta semana y cuánto gané?\",\n    \"respuesta\": \"Esta semana vendiste S/ 141.00...\",\n    \"exitosa\": true,\n    \"fecha\": \"2026-09-25T18:40:00\"\n  }\n]"
+              "body": "{\n  \"content\": [\n    {\n      \"id\": 1,\n      \"pregunta\": \"¿Cuánto vendí esta semana y cuánto gané?\",\n      \"respuesta\": \"Esta semana vendiste S/ 141.00...\",\n      \"exitosa\": true,\n      \"fecha\": \"2026-09-25T18:40:00\"\n    }\n  ],\n  \"page\": 0,\n  \"size\": 20,\n  \"totalElements\": 1,\n  \"totalPages\": 1,\n  \"first\": true,\n  \"last\": true,\n  \"sort\": \"fecha: DESC\"\n}"
             }
           ]
         },

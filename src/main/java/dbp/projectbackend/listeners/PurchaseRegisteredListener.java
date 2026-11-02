@@ -27,8 +27,7 @@ public class PurchaseRegisteredListener {
     @Async(AsyncConfig.NOTIFICATIONS_EXECUTOR)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onPurchaseRegistered(PurchaseRegisteredEvent event) {
-        userRepository.findByEmpresaId(event.getEmpresaId()).stream()
-                .filter(u -> u.getRole() == Role.ADMIN)
+        userRepository.findByEmpresaIdAndRole(event.getEmpresaId(), Role.ADMIN)
                 .forEach(admin -> sendConfirmation(admin, event));
     }
 

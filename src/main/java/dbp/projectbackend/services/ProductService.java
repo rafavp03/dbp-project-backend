@@ -2,10 +2,13 @@ package dbp.projectbackend.services;
 
 import dbp.projectbackend.dtos.request.ProductDTO;
 import dbp.projectbackend.dtos.request.ProductPatchDTO;
+import dbp.projectbackend.dtos.response.PageResponseDTO;
 import dbp.projectbackend.dtos.response.ProductResponseDTO;
+import dbp.projectbackend.events.ProductPriceChangedEvent;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.ForbiddenException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
+import dbp.projectbackend.mappers.ProductMapper;
 import dbp.projectbackend.models.CategoryModel;
 import dbp.projectbackend.models.EnterpriseModel;
 import dbp.projectbackend.models.ProductModel;
@@ -13,10 +16,13 @@ import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.repositories.CategoryRepository;
 import dbp.projectbackend.repositories.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.math.BigDecimal;
 
 @RequiredArgsConstructor
 @Service
@@ -24,6 +30,8 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final ProductMapper productMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public ProductResponseDTO createProduct(UserModel currentUser, ProductDTO dto) {
@@ -33,32 +41,27 @@ public class ProductService {
             throw new DuplicateResourceException("Ya existe un producto con código \"" + dto.codigo() + "\" en esta empresa.");
         }
 
-        CategoryModel categoria = resolveCategory(empresa, dto.categoriaId());
-
         ProductModel newProduct = new ProductModel(dto.codigo(), dto.nombre(), dto.precioVenta(), empresa);
-        newProduct.setDescripcion(dto.descripcion());
-        newProduct.setPrecioCompra(dto.precioCompra());
-        if (dto.unidadMedida() != null && !dto.unidadMedida().isBlank()) {
-            newProduct.setUnidadMedida(dto.unidadMedida());
-        }
-        newProduct.setCategoria(categoria);
+        productMapper.updateEntity(dto, newProduct);
+        newProduct.setCategoria(resolveCategory(empresa, dto.categoriaId()));
 
-        return toDTO(productRepository.save(newProduct));
+        return productMapper.toResponse(productRepository.save(newProduct));
     }
 
     @Transactional(readOnly = true)
-    public List<ProductResponseDTO> getProductsByEnterprise(UserModel currentUser, boolean soloActivos) {
+    public PageResponseDTO<ProductResponseDTO> getProductsByEnterprise(UserModel currentUser, boolean soloActivos,
+                                                                       Pageable pageable) {
         Long empresaId = currentUser.getEmpresa().getId();
-        List<ProductModel> productos = soloActivos
-                ? productRepository.findByEmpresaIdAndActivoTrue(empresaId)
-                : productRepository.findByEmpresaId(empresaId);
+        Page<ProductModel> productos = soloActivos
+                ? productRepository.findByEmpresaIdAndActivoTrue(empresaId, pageable)
+                : productRepository.findByEmpresaId(empresaId, pageable);
 
-        return productos.stream().map(this::toDTO).toList();
+        return PageResponseDTO.from(productos.map(productMapper::toResponse));
     }
 
     @Transactional(readOnly = true)
     public ProductResponseDTO getProductById(UserModel currentUser, Long id) {
-        return toDTO(findOwnedProduct(currentUser, id));
+        return productMapper.toResponse(findOwnedProduct(currentUser, id));
     }
 
     @Transactional
@@ -70,43 +73,35 @@ public class ProductService {
             throw new DuplicateResourceException("Ya existe un producto con código \"" + dto.codigo() + "\" en esta empresa.");
         }
 
-        CategoryModel categoria = resolveCategory(currentUser.getEmpresa(), dto.categoriaId());
+        PriceSnapshot antes = PriceSnapshot.of(product);
+        productMapper.updateEntity(dto, product);
+        product.setCategoria(resolveCategory(currentUser.getEmpresa(), dto.categoriaId()));
 
-        product.setCodigo(dto.codigo());
-        product.setNombre(dto.nombre());
-        product.setDescripcion(dto.descripcion());
-        product.setPrecioCompra(dto.precioCompra());
-        product.setPrecioVenta(dto.precioVenta());
-        if (dto.unidadMedida() != null && !dto.unidadMedida().isBlank()) {
-            product.setUnidadMedida(dto.unidadMedida());
-        }
-        product.setCategoria(categoria);
-
-        return toDTO(productRepository.save(product));
+        ProductModel guardado = productRepository.save(product);
+        publishIfPriceChanged(currentUser, guardado, antes);
+        return productMapper.toResponse(guardado);
     }
 
     @Transactional
     public ProductResponseDTO patchProduct(UserModel currentUser, Long id, ProductPatchDTO dto) {
         ProductModel product = findOwnedProduct(currentUser, id);
 
-        if (dto.codigo() != null) {
-            if (!product.getCodigo().equals(dto.codigo())
-                    && productRepository.existsByEmpresaIdAndCodigo(currentUser.getEmpresa().getId(), dto.codigo())) {
-                throw new DuplicateResourceException(
-                        "Ya existe un producto con código \"" + dto.codigo() + "\" en esta empresa.");
-            }
-            product.setCodigo(dto.codigo());
+        if (dto.codigo() != null
+                && !product.getCodigo().equals(dto.codigo())
+                && productRepository.existsByEmpresaIdAndCodigo(currentUser.getEmpresa().getId(), dto.codigo())) {
+            throw new DuplicateResourceException(
+                    "Ya existe un producto con código \"" + dto.codigo() + "\" en esta empresa.");
         }
-        if (dto.nombre() != null) product.setNombre(dto.nombre());
-        if (dto.descripcion() != null) product.setDescripcion(dto.descripcion());
-        if (dto.unidadMedida() != null) product.setUnidadMedida(dto.unidadMedida());
-        if (dto.precioCompra() != null) product.setPrecioCompra(dto.precioCompra());
-        if (dto.precioVenta() != null) product.setPrecioVenta(dto.precioVenta());
+
+        PriceSnapshot antes = PriceSnapshot.of(product);
+        productMapper.patchEntity(dto, product);
         if (dto.categoriaId() != null) {
             product.setCategoria(resolveCategory(currentUser.getEmpresa(), dto.categoriaId()));
         }
 
-        return toDTO(productRepository.save(product));
+        ProductModel guardado = productRepository.save(product);
+        publishIfPriceChanged(currentUser, guardado, antes);
+        return productMapper.toResponse(guardado);
     }
 
     @Transactional
@@ -114,6 +109,33 @@ public class ProductService {
         ProductModel product = findOwnedProduct(currentUser, id);
         product.setActivo(false);
         productRepository.save(product);
+    }
+
+    private void publishIfPriceChanged(UserModel currentUser, ProductModel product, PriceSnapshot antes) {
+        boolean cambioVenta = differs(antes.precioVenta(), product.getPrecioVenta());
+        boolean cambioCosto = differs(antes.precioCompra(), product.getPrecioCompra());
+        if (!cambioVenta && !cambioCosto) {
+            return;
+        }
+        eventPublisher.publishEvent(new ProductPriceChangedEvent(
+                this,
+                product.getId(),
+                product.getEmpresa().getId(),
+                product.getCodigo(),
+                product.getNombre(),
+                antes.precioVenta(),
+                product.getPrecioVenta(),
+                antes.precioCompra(),
+                product.getPrecioCompra(),
+                currentUser.getNombre()));
+    }
+
+    /** Compara montos por valor: 25.0 y 25.00 son el mismo precio. */
+    private static boolean differs(BigDecimal anterior, BigDecimal nuevo) {
+        if (anterior == null || nuevo == null) {
+            return anterior != nuevo;
+        }
+        return anterior.compareTo(nuevo) != 0;
     }
 
     private CategoryModel resolveCategory(EnterpriseModel empresa, Long categoriaId) {
@@ -138,20 +160,9 @@ public class ProductService {
         return product;
     }
 
-    private ProductResponseDTO toDTO(ProductModel product) {
-        return new ProductResponseDTO(
-                product.getId(),
-                product.getCodigo(),
-                product.getNombre(),
-                product.getDescripcion(),
-                product.getUnidadMedida(),
-                product.getPrecioCompra(),
-                product.getPrecioVenta(),
-                product.getActivo(),
-                product.getCategoria() != null ? product.getCategoria().getId() : null,
-                product.getCategoria() != null ? product.getCategoria().getNombre() : null,
-                product.getEmpresa().getId(),
-                product.getTotalStock()
-        );
+    private record PriceSnapshot(BigDecimal precioVenta, BigDecimal precioCompra) {
+        static PriceSnapshot of(ProductModel product) {
+            return new PriceSnapshot(product.getPrecioVenta(), product.getPrecioCompra());
+        }
     }
 }

@@ -1,19 +1,20 @@
 package dbp.projectbackend.services;
 
 import dbp.projectbackend.dtos.request.ProductVariantDTO;
+import dbp.projectbackend.dtos.response.PageResponseDTO;
 import dbp.projectbackend.dtos.response.ProductVariantResponseDTO;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
+import dbp.projectbackend.mappers.ProductVariantMapper;
 import dbp.projectbackend.models.ProductModel;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.models.ProductVariantModel;
 import dbp.projectbackend.repositories.ProductRepository;
 import dbp.projectbackend.repositories.ProductVariantRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -21,6 +22,7 @@ public class ProductVariantService {
 
     private final ProductVariantRepository varianteRepository;
     private final ProductRepository productRepository;
+    private final ProductVariantMapper varianteMapper;
 
     @Transactional
     public ProductVariantResponseDTO createVariant(UserModel currentUser, Long productoId, ProductVariantDTO dto) {
@@ -33,26 +35,23 @@ public class ProductVariantService {
                 });
 
         ProductVariantModel newVariante = new ProductVariantModel(dto.talla(), dto.color());
-        newVariante.setSku(dto.sku());
-        if (dto.stockMinimo() != null) {
-            newVariante.setStockMinimo(dto.stockMinimo());
-        }
+        varianteMapper.updateEntity(dto, newVariante);
         producto.addVariant(newVariante);
 
-        return toDTO(varianteRepository.save(newVariante));
+        return varianteMapper.toResponse(varianteRepository.save(newVariante));
     }
 
     @Transactional(readOnly = true)
-    public List<ProductVariantResponseDTO> getVariantsByProduct(UserModel currentUser, Long productoId) {
+    public PageResponseDTO<ProductVariantResponseDTO> getVariantsByProduct(UserModel currentUser, Long productoId,
+                                                                            Pageable pageable) {
         findOwnedProduct(currentUser, productoId);
-        return varianteRepository.findByProductoId(productoId).stream()
-                .map(this::toDTO)
-                .toList();
+        return PageResponseDTO.from(
+                varianteRepository.findByProductoId(productoId, pageable).map(varianteMapper::toResponse));
     }
 
     @Transactional(readOnly = true)
     public ProductVariantResponseDTO getVariantById(UserModel currentUser, Long id) {
-        return toDTO(findOwnedVariant(currentUser, id));
+        return varianteMapper.toResponse(findOwnedVariant(currentUser, id));
     }
 
     @Transactional
@@ -68,14 +67,9 @@ public class ProductVariantService {
                     });
         }
 
-        variante.setTalla(dto.talla());
-        variante.setColor(dto.color());
-        variante.setSku(dto.sku());
-        if (dto.stockMinimo() != null) {
-            variante.setStockMinimo(dto.stockMinimo());
-        }
+        varianteMapper.updateEntity(dto, variante);
 
-        return toDTO(varianteRepository.save(variante));
+        return varianteMapper.toResponse(varianteRepository.save(variante));
     }
 
     @Transactional
@@ -103,20 +97,5 @@ public class ProductVariantService {
             throw new ResourceNotFoundException("Variante con id " + id + " no encontrada.");
         }
         return variante;
-    }
-
-    private ProductVariantResponseDTO toDTO(ProductVariantModel variante) {
-        return new ProductVariantResponseDTO(
-                variante.getId(),
-                variante.getProducto().getId(),
-                variante.getProducto().getNombre(),
-                variante.getTalla(),
-                variante.getColor(),
-                variante.getSku(),
-                variante.getStock(),
-                variante.getStockMinimo(),
-                variante.getActivo(),
-                variante.isLowStock()
-        );
     }
 }

@@ -2,10 +2,13 @@ package dbp.projectbackend.controllers;
 
 import dbp.projectbackend.dtos.request.ClientDTO;
 import dbp.projectbackend.dtos.response.ClientResponseDTO;
+import dbp.projectbackend.dtos.response.PageResponseDTO;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.services.ClientService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -13,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
-import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
@@ -41,8 +43,10 @@ public class ClientController {
 
     @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")
     @GetMapping
-    public ResponseEntity<List<ClientResponseDTO>> getClients(@AuthenticationPrincipal UserModel user) {
-        return ResponseEntity.ok(service.getClientsByEnterprise(user));
+    public ResponseEntity<PageResponseDTO<ClientResponseDTO>> getClients(
+            @AuthenticationPrincipal UserModel user,
+            @PageableDefault(size = 20, sort = "nombre") Pageable pageable) {
+        return ResponseEntity.ok(service.getClientsByEnterprise(user, pageable));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")

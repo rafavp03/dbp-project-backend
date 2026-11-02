@@ -4,16 +4,19 @@ import dbp.projectbackend.ai.AdminTools;
 import dbp.projectbackend.ai.InventoryTools;
 import dbp.projectbackend.dtos.response.AssistantAnswerResponseDTO;
 import dbp.projectbackend.dtos.response.AiQueryResponseDTO;
+import dbp.projectbackend.dtos.response.PageResponseDTO;
 import dbp.projectbackend.enums.Role;
 import dbp.projectbackend.exceptions.AssistantUnavailableException;
 import dbp.projectbackend.exceptions.QueryLimitExceededException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
+import dbp.projectbackend.mappers.AiQueryMapper;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.repositories.AiQueryRepository;
 import dbp.projectbackend.repositories.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -36,6 +39,7 @@ public class AssistantService {
     private final AiQueryAuditService auditService;
     private final AiQueryRepository consultaRepository;
     private final UserRepository userRepository;
+    private final AiQueryMapper consultaMapper;
     private final int limiteDiario;
     private final boolean habilitado;
 
@@ -44,6 +48,7 @@ public class AssistantService {
                             AiQueryAuditService auditService,
                             AiQueryRepository consultaRepository,
                             UserRepository userRepository,
+                            AiQueryMapper consultaMapper,
                             @Value("${asistente.limite-diario:30}") int limiteDiario,
                             @Value("${app.ai.api-key:}") String apiKey) {
         this.chatClient = chatClientBuilder.build();
@@ -51,6 +56,7 @@ public class AssistantService {
         this.auditService = auditService;
         this.consultaRepository = consultaRepository;
         this.userRepository = userRepository;
+        this.consultaMapper = consultaMapper;
         this.limiteDiario = limiteDiario;
         this.habilitado = StringUtils.hasText(apiKey);
     }
@@ -108,11 +114,9 @@ public class AssistantService {
     }
 
     @Transactional(readOnly = true)
-    public List<AiQueryResponseDTO> history(UserModel usuario) {
-        return consultaRepository.findTop20ByUsuarioIdOrderByFechaDesc(usuario.getId()).stream()
-                .map(c -> new AiQueryResponseDTO(c.getId(), c.getPregunta(), c.getRespuesta(),
-                        c.getExitosa(), c.getFecha()))
-                .toList();
+    public PageResponseDTO<AiQueryResponseDTO> history(UserModel usuario, Pageable pageable) {
+        return PageResponseDTO.from(
+                consultaRepository.findByUsuarioId(usuario.getId(), pageable).map(consultaMapper::toResponse));
     }
 
     private long queriesToday(UserModel usuario) {

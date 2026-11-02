@@ -10,6 +10,7 @@ import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.InvalidOperationException;
 import dbp.projectbackend.exceptions.InvalidTokenException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
+import dbp.projectbackend.mappers.UserMapper;
 import dbp.projectbackend.models.EnterpriseModel;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.repositories.EnterpriseRepository;
@@ -35,7 +36,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
-    private final UserService userService;
+    private final UserMapper userMapper;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
@@ -99,6 +100,6 @@ public class AuthService {
         return new AuthResponseDTO(
                 jwtService.generateToken(user),
                 jwtService.generateRefreshToken(user),
-                userService.toDTO(user));
+                userMapper.toResponse(user));
     }
 }

@@ -2,22 +2,24 @@ package dbp.projectbackend.services;
 
 import dbp.projectbackend.dtos.request.ClientDTO;
 import dbp.projectbackend.dtos.response.ClientResponseDTO;
+import dbp.projectbackend.dtos.response.PageResponseDTO;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
+import dbp.projectbackend.mappers.ClientMapper;
 import dbp.projectbackend.models.ClientModel;
 import dbp.projectbackend.models.EnterpriseModel;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.repositories.ClientRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @RequiredArgsConstructor
 @Service
 public class ClientService {
     private final ClientRepository clientRepository;
+    private final ClientMapper clientMapper;
 
     @Transactional
     public ClientResponseDTO createClient(UserModel currentUser, ClientDTO dto) {
@@ -28,23 +30,21 @@ public class ClientService {
         }
 
         ClientModel newClient = new ClientModel(dto.documento(), dto.nombre(), empresa);
-        newClient.setTelefono(dto.telefono());
-        newClient.setCorreo(dto.correo());
-        newClient.setDireccion(dto.direccion());
+        clientMapper.updateEntity(dto, newClient);
 
-        return toDTO(clientRepository.save(newClient));
+        return clientMapper.toResponse(clientRepository.save(newClient));
     }
 
     @Transactional(readOnly = true)
     public ClientResponseDTO getClientById(UserModel currentUser, Long id) {
-        return toDTO(findOwnedClient(currentUser, id));
+        return clientMapper.toResponse(findOwnedClient(currentUser, id));
     }
 
     @Transactional(readOnly = true)
-    public List<ClientResponseDTO> getClientsByEnterprise(UserModel currentUser) {
-        return clientRepository.findByEmpresaId(currentUser.getEmpresa().getId()).stream()
-                .map(this::toDTO)
-                .toList();
+    public PageResponseDTO<ClientResponseDTO> getClientsByEnterprise(UserModel currentUser, Pageable pageable) {
+        return PageResponseDTO.from(
+                clientRepository.findByEmpresaId(currentUser.getEmpresa().getId(), pageable)
+                        .map(clientMapper::toResponse));
     }
 
     @Transactional
@@ -56,13 +56,9 @@ public class ClientService {
             throw new DuplicateResourceException("Ya existe un cliente con documento "+dto.documento()+" en esta empresa.");
         }
 
-        client.setDocumento(dto.documento());
-        client.setNombre(dto.nombre());
-        client.setTelefono(dto.telefono());
-        client.setCorreo(dto.correo());
-        client.setDireccion(dto.direccion());
+        clientMapper.updateEntity(dto, client);
 
-        return toDTO(clientRepository.save(client));
+        return clientMapper.toResponse(clientRepository.save(client));
     }
 
     @Transactional
@@ -78,17 +74,5 @@ public class ClientService {
             throw new ResourceNotFoundException("Cliente con id "+id+" no encontrado.");
         }
         return client;
-    }
-
-    private ClientResponseDTO toDTO(ClientModel client) {
-        return new ClientResponseDTO(
-                client.getId(),
-                client.getDocumento(),
-                client.getNombre(),
-                client.getTelefono(),
-                client.getCorreo(),
-                client.getDireccion(),
-                client.getEmpresa().getId()
-        );
     }
 }

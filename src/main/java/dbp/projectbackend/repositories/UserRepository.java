@@ -1,7 +1,10 @@
 package dbp.projectbackend.repositories;
 
+import dbp.projectbackend.enums.Role;
 import dbp.projectbackend.models.UserModel;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -16,9 +19,11 @@ public interface UserRepository extends JpaRepository<UserModel, Long> {
     Optional<UserModel> findByEmail(String email);
     boolean existsByEmail(String email);
     boolean existsByEmpresaId(Long empresaId);
-    List<UserModel> findByEmpresaId(Long empresaId);
+    List<UserModel> findByEmpresaIdAndRole(Long empresaId, Role role);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT u FROM UserModel u WHERE u.id = :id")
     Optional<UserModel> findByIdForUpdate(@Param("id") Long id);
+
+    Page<UserModel> findByEmpresaId(Long empresaId, Pageable pageable);
 }

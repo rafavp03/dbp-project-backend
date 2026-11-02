@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Ajuste de inventario</title>
+</head>
+<body style="margin:0;padding:24px;background:#f4f5f7;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+<table role="presentation" width="100%" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:32px;">
+    <tr>
+        <td>
+            <h1 style="margin:0 0 16px;font-size:22px;color:#b45309;">Ajuste de inventario</h1>
+            <p style="margin:0 0 16px;line-height:1.5;">
+                Hola, <span th:text="${nombre}">Rosa</span>.
+                <strong th:text="${registradoPor}">Luis Huamán</strong> ajustó el stock de
+                <strong th:text="${variante}">Polo básico - M - Negro</strong> después de un conteo físico.
+            </p>
+            <table role="presentation" width="100%" style="border-collapse:collapse;font-size:14px;">
+                <tr>
+                    <td style="padding:8px;border-bottom:1px solid #f3f4f6;">Stock en el sistema</td>
+                    <td style="padding:8px;border-bottom:1px solid #f3f4f6;text-align:right;" th:text="${stockAnterior}">12</td>
+                </tr>
+                <tr>
+                    <td style="padding:8px;border-bottom:1px solid #f3f4f6;">Stock contado</td>
+                    <td style="padding:8px;border-bottom:1px solid #f3f4f6;text-align:right;" th:text="${stockResultante}">9</td>
+                </tr>
+                <tr>
+                    <td style="padding:8px;border-bottom:1px solid #f3f4f6;">Diferencia</td>
+                    <td style="padding:8px;border-bottom:1px solid #f3f4f6;text-align:right;font-weight:bold;"
+                        th:styleappend="${diferencia < 0 ? 'color:#b91c1c;' : 'color:#15803d;'}"
+                        th:text="${diferencia > 0 ? '+' + diferencia : diferencia}">-3</td>
+                </tr>
+                <tr>
+                    <td style="padding:8px;">Motivo</td>
+                    <td style="padding:8px;text-align:right;" th:text="${motivo}">Conteo de fin de mes</td>
+                </tr>
+            </table>
+            <p th:if="${diferencia < 0}" style="margin:16px 0 0;line-height:1.5;">
+                Faltan prendas respecto a lo registrado. Revisa si hubo merma, una venta sin registrar o un error de conteo.
+            </p>
+            <p style="margin:24px 0 0;font-size:12px;color:#6b7280;">Este es un mensaje automático, no es necesario responder.</p>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

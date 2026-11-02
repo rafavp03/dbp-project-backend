@@ -2,11 +2,12 @@ package dbp.projectbackend.services;
 
 import dbp.projectbackend.dtos.request.PurchaseOrderLineDTO;
 import dbp.projectbackend.dtos.request.PurchaseOrderDTO;
-import dbp.projectbackend.dtos.response.PurchaseOrderLineResponseDTO;
+import dbp.projectbackend.dtos.response.PageResponseDTO;
 import dbp.projectbackend.dtos.response.PurchaseOrderResponseDTO;
 import dbp.projectbackend.enums.OrderStatus;
 import dbp.projectbackend.events.PurchaseRegisteredEvent;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
+import dbp.projectbackend.mappers.PurchaseOrderMapper;
 import dbp.projectbackend.models.*;
 import dbp.projectbackend.repositories.StockMovementRepository;
 import dbp.projectbackend.repositories.PurchaseOrderRepository;
@@ -14,9 +15,12 @@ import dbp.projectbackend.repositories.SupplierRepository;
 import dbp.projectbackend.repositories.ProductVariantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,6 +33,7 @@ public class PurchaseOrderService {
     private final ProductVariantRepository varianteRepository;
     private final StockMovementRepository movimientoStockRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final PurchaseOrderMapper purchaseOrderMapper;
 
     @Transactional
     public PurchaseOrderResponseDTO createPurchaseOrder(UserModel currentUser, PurchaseOrderDTO dto) {
@@ -73,7 +78,26 @@ public class PurchaseOrderService {
                         .toList()
         ));
 
-        return toDTO(guardada);
+        return purchaseOrderMapper.toResponse(guardada);
+    }
+
+    /**
+     * Lista las compras de la empresa, por defecto las más recientes primero.
+     * Si se envía {@code desde} y/o {@code hasta}, filtra por fecha de emisión (ambos inclusive).
+     */
+    @Transactional(readOnly = true)
+    public PageResponseDTO<PurchaseOrderResponseDTO> getPurchaseOrders(UserModel currentUser, LocalDate desde,
+                                                                       LocalDate hasta, Pageable pageable) {
+        Long empresaId = currentUser.getEmpresa().getId();
+        Page<PurchaseOrderModel> compras;
+        if (desde == null && hasta == null) {
+            compras = ordenCompraRepository.findByEmpresaId(empresaId, pageable);
+        } else {
+            DateRange rango = DateRange.of(desde, hasta);
+            compras = ordenCompraRepository.findByEmpresaIdAndFechaEmisionGreaterThanEqualAndFechaEmisionLessThan(
+                    empresaId, rango.inicio(), rango.finExclusivo(), pageable);
+        }
+        return PageResponseDTO.from(compras.map(purchaseOrderMapper::toResponse));
     }
 
     @Transactional(readOnly = true)
@@ -85,30 +109,6 @@ public class PurchaseOrderService {
             throw new ResourceNotFoundException("Orden de compra con id " + id + " no encontrada");
         }
 
-        return toDTO(orden);
-    }
-
-    private PurchaseOrderResponseDTO toDTO(PurchaseOrderModel orden) {
-        List<PurchaseOrderLineResponseDTO> detalles = orden.getDetalles().stream()
-                .map(d -> new PurchaseOrderLineResponseDTO(
-                        d.getId(),
-                        d.getVariante().getId(),
-                        d.getVariante().getFullName(),
-                        d.getCantidad(),
-                        d.getPrecioUnitario(),
-                        d.getSubtotal()
-                ))
-                .toList();
-
-        return new PurchaseOrderResponseDTO(
-                orden.getId(),
-                orden.getEmpresa().getId(),
-                orden.getProveedor().getId(),
-                orden.getProveedor().getRazonSocial(),
-                orden.getFechaEmision(),
-                orden.getEstado(),
-                orden.getTotal(),
-                detalles
-        );
+        return purchaseOrderMapper.toResponse(orden);
     }
 }

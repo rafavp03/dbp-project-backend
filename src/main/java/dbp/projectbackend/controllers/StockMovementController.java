@@ -2,19 +2,21 @@ package dbp.projectbackend.controllers;
 
 import dbp.projectbackend.dtos.request.StockAdjustmentDTO;
 import dbp.projectbackend.dtos.request.StockMovementDTO;
-import dbp.projectbackend.dtos.response.StockMovementResponseDTO;
+import dbp.projectbackend.dtos.response.PageResponseDTO;
 import dbp.projectbackend.dtos.response.ProductVariantResponseDTO;
+import dbp.projectbackend.dtos.response.StockMovementResponseDTO;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.services.StockMovementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
@@ -49,13 +51,18 @@ public class StockMovementController {
 
     @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")
     @GetMapping("/variants/{varianteId}")
-    public ResponseEntity<List<StockMovementResponseDTO>> getKardex(@AuthenticationPrincipal UserModel user, @PathVariable Long varianteId) {
-        return ResponseEntity.ok(service.getKardexByVariant(user, varianteId));
+    public ResponseEntity<PageResponseDTO<StockMovementResponseDTO>> getKardex(
+            @AuthenticationPrincipal UserModel user,
+            @PathVariable Long varianteId,
+            @PageableDefault(size = 20, sort = "fecha", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(service.getKardexByVariant(user, varianteId, pageable));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")
     @GetMapping("/low-stock")
-    public ResponseEntity<List<ProductVariantResponseDTO>> getLowStock(@AuthenticationPrincipal UserModel user) {
-        return ResponseEntity.ok(service.getLowStock(user));
+    public ResponseEntity<PageResponseDTO<ProductVariantResponseDTO>> getLowStock(
+            @AuthenticationPrincipal UserModel user,
+            @PageableDefault(size = 20, sort = "stock") Pageable pageable) {
+        return ResponseEntity.ok(service.getLowStock(user, pageable));
     }
 }

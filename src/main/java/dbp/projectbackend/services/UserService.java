@@ -1,20 +1,22 @@
 package dbp.projectbackend.services;
 
 import dbp.projectbackend.dtos.request.UserDTO;
+import dbp.projectbackend.dtos.response.PageResponseDTO;
 import dbp.projectbackend.dtos.response.UserResponseDTO;
+import dbp.projectbackend.events.UserDeletedEvent;
 import dbp.projectbackend.events.UserRegisteredEvent;
 import dbp.projectbackend.exceptions.DuplicateResourceException;
 import dbp.projectbackend.exceptions.InvalidOperationException;
 import dbp.projectbackend.exceptions.ResourceNotFoundException;
+import dbp.projectbackend.mappers.UserMapper;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -22,6 +24,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final ApplicationEventPublisher eventPublisher;
+    private final UserMapper userMapper;
 
     @Transactional
     public UserResponseDTO createUser(UserModel admin, UserDTO dto) {
@@ -41,19 +44,19 @@ public class UserService {
         eventPublisher.publishEvent(new UserRegisteredEvent(
                 this, guardado.getNombre(), guardado.getEmail(), admin.getEmpresa().getRazonSocial(), guardado.getRole()));
 
-        return toDTO(guardado);
+        return userMapper.toResponse(guardado);
     }
 
     @Transactional(readOnly = true)
     public UserResponseDTO getCurrentUser(UserModel user) {
-        return toDTO(user);
+        return userMapper.toResponse(user);
     }
 
     @Transactional(readOnly = true)
-    public List<UserResponseDTO> getUsersOfEnterprise(UserModel admin) {
-        return userRepository.findByEmpresaId(admin.getEmpresa().getId()).stream()
-                .map(this::toDTO)
-                .toList();
+    public PageResponseDTO<UserResponseDTO> getUsersOfEnterprise(UserModel admin, Pageable pageable) {
+        return PageResponseDTO.from(
+                userRepository.findByEmpresaId(admin.getEmpresa().getId(), pageable)
+                        .map(userMapper::toResponse));
     }
 
     @Transactional
@@ -69,15 +72,7 @@ public class UserService {
         }
 
         userRepository.delete(user);
-    }
-
-    public UserResponseDTO toDTO(UserModel user) {
-        return new UserResponseDTO(
-                user.getId(),
-                user.getNombre(),
-                user.getEmail(),
-                user.getRole(),
-                user.getEmpresa().getId()
-        );
+        eventPublisher.publishEvent(new UserDeletedEvent(
+                this, user.getNombre(), user.getEmail(), admin.getEmpresa().getRazonSocial(), admin.getNombre()));
     }
 }
