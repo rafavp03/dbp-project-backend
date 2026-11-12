@@ -41,8 +41,9 @@ public class ProductController {
     public ResponseEntity<PageResponseDTO<ProductResponseDTO>> getProducts(
             @AuthenticationPrincipal UserModel user,
             @RequestParam(defaultValue = "true") boolean soloActivos,
+            @RequestParam(required = false) String search,
             @PageableDefault(size = 20, sort = "nombre") Pageable pageable) {
-        return ResponseEntity.ok(service.getProductsByEnterprise(user, soloActivos, pageable));
+        return ResponseEntity.ok(service.getProductsByEnterprise(user, soloActivos, search, pageable));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")

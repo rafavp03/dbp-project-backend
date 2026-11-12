@@ -50,11 +50,17 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public PageResponseDTO<ProductResponseDTO> getProductsByEnterprise(UserModel currentUser, boolean soloActivos,
-                                                                       Pageable pageable) {
+                                                                       String search, Pageable pageable) {
         Long empresaId = currentUser.getEmpresa().getId();
-        Page<ProductModel> productos = soloActivos
-                ? productRepository.findByEmpresaIdAndActivoTrue(empresaId, pageable)
-                : productRepository.findByEmpresaId(empresaId, pageable);
+        Page<ProductModel> productos;
+
+        if (search != null && !search.isBlank()) {
+            productos = productRepository.searchByEmpresaId(empresaId, soloActivos, search.trim(), pageable);
+        } else if (soloActivos) {
+            productos = productRepository.findByEmpresaIdAndActivoTrue(empresaId, pageable);
+        } else {
+            productos = productRepository.findByEmpresaId(empresaId, pageable);
+        }
 
         return PageResponseDTO.from(productos.map(productMapper::toResponse));
     }

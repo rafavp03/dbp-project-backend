@@ -45,8 +45,9 @@ public class ClientController {
     @GetMapping
     public ResponseEntity<PageResponseDTO<ClientResponseDTO>> getClients(
             @AuthenticationPrincipal UserModel user,
+            @RequestParam(required = false) String search,
             @PageableDefault(size = 20, sort = "nombre") Pageable pageable) {
-        return ResponseEntity.ok(service.getClientsByEnterprise(user, pageable));
+        return ResponseEntity.ok(service.getClientsByEnterprise(user, search, pageable));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")

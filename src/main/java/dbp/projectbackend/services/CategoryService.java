@@ -11,6 +11,7 @@ import dbp.projectbackend.models.EnterpriseModel;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.repositories.CategoryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,10 +38,14 @@ public class CategoryService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponseDTO<CategoryResponseDTO> getCategoriesByEnterprise(UserModel currentUser, Pageable pageable) {
-        return PageResponseDTO.from(
-                categoryRepository.findByEmpresaId(currentUser.getEmpresa().getId(), pageable)
-                        .map(categoryMapper::toResponse));
+    public PageResponseDTO<CategoryResponseDTO> getCategoriesByEnterprise(UserModel currentUser, String search,
+                                                                          Pageable pageable) {
+        Long empresaId = currentUser.getEmpresa().getId();
+        Page<CategoryModel> categories = (search == null || search.isBlank())
+                ? categoryRepository.findByEmpresaId(empresaId, pageable)
+                : categoryRepository.searchByEmpresaId(empresaId, search.trim(), pageable);
+
+        return PageResponseDTO.from(categories.map(categoryMapper::toResponse));
     }
 
     @Transactional(readOnly = true)
