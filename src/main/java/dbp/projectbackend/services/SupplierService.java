@@ -11,6 +11,7 @@ import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.repositories.EnterpriseRepository;
 import dbp.projectbackend.repositories.SupplierRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,10 +47,14 @@ public class SupplierService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponseDTO<SupplierResponseDTO> getSuppliersByEnterprise(UserModel currentUser, Pageable pageable) {
-        return PageResponseDTO.from(
-                supplierRepository.findByEmpresasId(currentUser.getEmpresa().getId(), pageable)
-                        .map(supplierMapper::toResponse));
+    public PageResponseDTO<SupplierResponseDTO> getSuppliersByEnterprise(UserModel currentUser, String search,
+                                                                         Pageable pageable) {
+        Long empresaId = currentUser.getEmpresa().getId();
+        Page<SupplierModel> suppliers = (search == null || search.isBlank())
+                ? supplierRepository.findByEmpresasId(empresaId, pageable)
+                : supplierRepository.searchByEmpresasId(empresaId, search.trim(), pageable);
+
+        return PageResponseDTO.from(suppliers.map(supplierMapper::toResponse));
     }
 
     private EnterpriseModel findEnterprise(UserModel currentUser) {

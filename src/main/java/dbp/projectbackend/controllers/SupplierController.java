@@ -45,7 +45,8 @@ public class SupplierController {
     @GetMapping
     public ResponseEntity<PageResponseDTO<SupplierResponseDTO>> getSuppliers(
             @AuthenticationPrincipal UserModel user,
+            @RequestParam(required = false) String search,
             @PageableDefault(size = 20, sort = "razonSocial") Pageable pageable) {
-        return ResponseEntity.ok(service.getSuppliersByEnterprise(user, pageable));
+        return ResponseEntity.ok(service.getSuppliersByEnterprise(user, search, pageable));
     }
 }

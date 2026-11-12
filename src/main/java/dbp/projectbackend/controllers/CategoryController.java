@@ -39,8 +39,9 @@ public class CategoryController {
     @GetMapping
     public ResponseEntity<PageResponseDTO<CategoryResponseDTO>> getCategories(
             @AuthenticationPrincipal UserModel user,
+            @RequestParam(required = false) String search,
             @PageableDefault(size = 20, sort = "nombre") Pageable pageable) {
-        return ResponseEntity.ok(service.getCategoriesByEnterprise(user, pageable));
+        return ResponseEntity.ok(service.getCategoriesByEnterprise(user, search, pageable));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','EMPLEADO')")

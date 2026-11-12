@@ -11,6 +11,7 @@ import dbp.projectbackend.models.EnterpriseModel;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.repositories.ClientRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,10 +42,14 @@ public class ClientService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponseDTO<ClientResponseDTO> getClientsByEnterprise(UserModel currentUser, Pageable pageable) {
-        return PageResponseDTO.from(
-                clientRepository.findByEmpresaId(currentUser.getEmpresa().getId(), pageable)
-                        .map(clientMapper::toResponse));
+    public PageResponseDTO<ClientResponseDTO> getClientsByEnterprise(UserModel currentUser, String search,
+                                                                     Pageable pageable) {
+        Long empresaId = currentUser.getEmpresa().getId();
+        Page<ClientModel> clients = (search == null || search.isBlank())
+                ? clientRepository.findByEmpresaId(empresaId, pageable)
+                : clientRepository.searchByEmpresaId(empresaId, search.trim(), pageable);
+
+        return PageResponseDTO.from(clients.map(clientMapper::toResponse));
     }
 
     @Transactional
