@@ -1,5 +1,6 @@
 package dbp.projectbackend.services;
 
+import dbp.projectbackend.dtos.response.AssistantAnswerResponseDTO;
 import dbp.projectbackend.enums.Role;
 import dbp.projectbackend.exceptions.AssistantUnavailableException;
 import dbp.projectbackend.exceptions.QueryLimitExceededException;
@@ -21,9 +22,14 @@ import org.springframework.ai.chat.client.ChatClient;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -91,6 +97,23 @@ class AssistantServiceTest {
                 .isInstanceOf(QueryLimitExceededException.class);
 
         verify(userRepository).findByIdForUpdate(any());
+    }
+
+    @Test
+    void askDevuelveRespuestaSinVisualCuandoElModeloNoUsaLaHerramienta() {
+        ChatClient clienteProfundo = mock(ChatClient.class, RETURNS_DEEP_STUBS);
+        when(chatClientBuilder.build()).thenReturn(clienteProfundo);
+        when(clienteProfundo.prompt().system(anyString()).user(anyString()).tools(any(Object[].class)).call().content())
+                .thenReturn("  Hola, soy Gamarrito IA.  ");
+        AssistantService service = serviceConClave("una-clave");
+        cuotaConsumida(2);
+
+        AssistantAnswerResponseDTO answer = service.ask(usuario, "Hola");
+
+        assertThat(answer.respuesta()).isEqualTo("Hola, soy Gamarrito IA.");
+        assertThat(answer.consultasRestantesHoy()).isEqualTo(LIMITE - 3);
+        assertThat(answer.visual()).isNull();
+        verify(auditService).audit(any(), any(), eq("Hola"), eq("Hola, soy Gamarrito IA."), eq(true));
     }
 
     @Test
