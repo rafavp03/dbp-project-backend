@@ -1,5 +1,7 @@
 # Tienda Clara: ERP con asistente de IA para minoristas de Gamarra
 
+[![CI](https://github.com/rafavp03/dbp-project-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/rafavp03/dbp-project-backend/actions/workflows/ci.yml)
+
 **Curso:** CS 2031 Desarrollo Basado en Plataforma
 
 **Integrantes:**
@@ -67,9 +69,9 @@ Estos negocios operan con márgenes pequeños: una mala compra impacta directame
 - **Lenguaje y framework:** Java 21, Spring Boot 4.1 (Web MVC, Data JPA, Validation, Security, Mail)
 - **Base de datos:** PostgreSQL 16 en un contenedor Docker (Docker Compose), tanto en desarrollo como en la instancia EC2 de producción
 - **Seguridad:** Spring Security, JWT (jjwt 0.12), BCrypt
-- **IA:** Spring AI 2.0 con **Google Gemini 2.5 Flash** (API externa) y *tool calling*
+- **IA:** Spring AI 2.0 con **Google Gemini 3.5 Flash-Lite** (`gemini-3.5-flash-lite`, API externa) y *tool calling*. El modelo se cambia con la variable `GEMINI_MODEL`, sin tocar código
 - **Correo:** JavaMailSender (SMTP) con plantillas **Thymeleaf**
-- **Despliegue:** AWS EC2 (Amazon Linux)
+- **Despliegue:** AWS EC2 (Amazon Linux) y Railway (contenedor Docker con `railway.json`)
 - **Mapeo y paginación:** MapStruct 1.6 para entidad–DTO y Spring Data `Pageable` en todos los listados
 - **Otros:** Lombok, Maven, Docker, GitHub Actions, JUnit 5 y Mockito, Postman
 
@@ -168,6 +170,22 @@ la creación de una empresa nueva.
 El detalle de cada endpoint, con ejemplos de body y respuesta, está en
 `postman_collection.json`.
 
+### Filtro de búsqueda
+
+Los listados de productos, categorías, clientes y proveedores aceptan el parámetro opcional `search`, que filtra por texto parcial dentro de la empresa del usuario:
+
+| Listado | Busca en | Ejemplo |
+|---|---|---|
+| `GET /products` | nombre o código | `/api/v1/products?search=polo` |
+| `GET /categories` | nombre | `/api/v1/categories?search=jean` |
+| `GET /clients` | nombre o documento (DNI/RUC) | `/api/v1/clients?search=7012` |
+| `GET /suppliers` | razón social o RUC | `/api/v1/suppliers?search=textil` |
+
+- Coincide con cualquier parte del texto (`LIKE %texto%`) y no distingue mayúsculas de minúsculas en nombres, códigos y razón social.
+- Se eliminan los espacios al inicio y al final; si `search` llega vacío o no se envía, se devuelve el listado completo.
+- Se combina con los demás parámetros: en productos respeta `soloActivos`, y en todos funciona con `page`, `size` y `sort`. Por ejemplo, `GET /api/v1/products?search=polo&soloActivos=true&sort=precioVenta,desc`.
+- La búsqueda nunca cruza empresas: la consulta siempre filtra por la empresa del token.
+
 ### Paginación
 
 Todos los listados son paginados y aceptan `page` (desde 0), `size` (por defecto 20, máximo 100) y `sort` (`campo,asc` o `campo,desc`, se puede repetir):
@@ -263,12 +281,14 @@ Los listeners usan `@TransactionalEventListener(phase = AFTER_COMMIT)`, así que
 
 - **Organización:** cada integrante trabajó en su propia rama (`Gabriel`, `hector`, `indira`, `javier`, `rafael`) y los cambios llegaron a `main` mediante **Pull Requests** (más de 20), revisados por el equipo antes del merge.
 - **Reparto:** Empresa y Proveedor; Órdenes de venta; Órdenes de compra; Usuarios, seguridad y Clientes; Catálogo, inventario, reportes e IA.
-- **GitHub Actions:** el workflow `.github/workflows/ci.yml` se ejecuta en cada push y en cada Pull Request a `main`:
-  1. levanta un contenedor PostgreSQL 16 como servicio;
-  2. instala Java 21 con caché de Maven;
-  3. compila y ejecuta los tests con `./mvnw verify`.
+- **GitHub Actions:** el workflow `.github/workflows/ci.yml` se ejecuta en cada push y en cada Pull Request a `main`, y también se puede lanzar a mano desde la pestaña *Actions* (`workflow_dispatch`):
+  1. levanta un contenedor PostgreSQL 16 como servicio, con *health check* para no arrancar los tests antes de que la base esté lista;
+  2. instala Java 21 (Temurin) con caché de Maven;
+  3. **genera un `JWT_SECRET` temporal** en cada ejecución con `openssl rand -base64 64`, así no hay ningún secreto real guardado en el repositorio ni en el workflow; las demás variables usan valores de prueba (`GEMINI_API_KEY=ci-sin-key`, sin SMTP);
+  4. da permisos de ejecución al Maven Wrapper y compila y ejecuta los tests con `./mvnw -B -ntp verify`;
+  5. **si algún test falla**, sube la carpeta `target/surefire-reports/` como artefacto `reportes-tests` (se conserva 7 días), para revisar el detalle del error desde la ejecución sin repetirla en local.
 
-  Si algo falla, el PR queda marcado en rojo antes de hacer merge.
+  Si se hace un push nuevo a la misma rama mientras otra ejecución sigue en curso, la anterior se cancela (`concurrency`) y el workflow tiene un límite de 20 minutos. Si algo falla, el PR queda marcado en rojo antes de hacer merge. El badge al inicio de este README muestra el estado de la última ejecución en `main`.
 - **Tests:** 23 en total.
   - `ProductVariantModelTest`: reglas de stock de la entidad.
   - `AssistantServiceTest`: cuota diaria, bloqueo pesimista y falta de clave de IA (Mockito).
@@ -280,10 +300,33 @@ Los listeners usan `@TransactionalEventListener(phase = AFTER_COMMIT)`, así que
 
 ## Ejecución local y despliegue
 
-1. Copiar `.env.example` como `.env` y completar `JWT_SECRET`, `GEMINI_API_KEY` y las credenciales SMTP (`MAIL_USERNAME`, `MAIL_PASSWORD`).
+1. Copiar `.env.example` como `.env` y completar al menos `JWT_SECRET`, `GEMINI_API_KEY` y las credenciales SMTP (`MAIL_USERNAME`, `MAIL_PASSWORD`). Las demás variables tienen valores por defecto (ver la tabla siguiente).
 2. Levantar la base de datos: `./run.sh` (o `docker compose up -d`).
 3. Ejecutar la aplicación: `./mvnw spring-boot:run`, que queda en `http://localhost:8080`.
 4. Importar `postman_collection.json` (en la raíz) y ejecutar las carpetas en orden.
+
+### Variables de entorno
+
+Se leen del archivo `.env` (ignorado por Git) o de las variables del servidor. La plantilla completa está en `.env.example`.
+
+| Variable | Obligatoria | Valor por defecto | Para qué sirve |
+|---|---|---|---|
+| `PORT` / `SERVER_PORT` | No | `8080` | Puerto HTTP. `PORT` tiene prioridad (lo usan Railway y la instancia EC2 con `PORT=80`) |
+| `DB_HOST` | **Sí** | — | Host de PostgreSQL (`localhost` en desarrollo y en EC2) |
+| `DB_PORT` | No | `5432` | Puerto de PostgreSQL |
+| `DB_NAME` | **Sí** | — | Nombre de la base (`project-backend` en `.env.example`) |
+| `DB_USER` / `DB_PASSWORD` | No | `postgres` / `postgres` | Credenciales de la base |
+| `DDL_AUTO` | No | `update` | Estrategia de Hibernate para el esquema; no usar `create-drop` en producción |
+| `SHOW_SQL` | No | `false` | Muestra en el log el SQL generado |
+| `JWT_SECRET` | **Sí** | — | Clave HMAC para firmar los tokens. Debe estar **en Base64 y tener al menos 256 bits**; se genera con `openssl rand -base64 64` |
+| `JWT_EXPIRATION` | No | `900000` (15 min) | Vigencia del *access token*, en milisegundos |
+| `JWT_REFRESH_EXPIRATION` | No | `604800000` (7 días) | Vigencia del *refresh token*, en milisegundos |
+| `CORS_ALLOWED_ORIGINS` | No | `http://localhost:3000` | Orígenes permitidos para el frontend |
+| `GEMINI_API_KEY` | Para usar la IA | vacío | Clave de Gemini. Si falta, la app arranca igual y `POST /assistant` responde 503 |
+| `GEMINI_MODEL` | No | `gemini-3.5-flash-lite` | Modelo de Gemini que usa el asistente |
+| `ASISTENTE_LIMITE_DIARIO` | No | `30` | Preguntas a la IA permitidas por usuario al día |
+| `MAIL_HOST` / `MAIL_PORT` | No | `smtp.gmail.com` / `587` | Servidor SMTP |
+| `MAIL_USERNAME` / `MAIL_PASSWORD` | Para enviar correos | vacío | Cuenta SMTP (en Gmail, una contraseña de aplicación); también es el remitente |
 
 ### Esquema de la base de datos y persistencia
 - `spring.jpa.hibernate.ddl-auto` usa **`update`** (configurable con la variable `DDL_AUTO`): al arrancar, Hibernate solo crea las tablas, columnas e índices que falten y **nunca borra datos**. Antes se usaba `create-drop`, que eliminaba la base en cada reinicio; ahora reiniciar o redesplegar la aplicación conserva empresas, ventas y kardex.
@@ -296,6 +339,14 @@ Los listeners usan `@TransactionalEventListener(phase = AFTER_COMMIT)`, así que
 - **Proceso:** se clona el repositorio en la instancia, se levanta la base con `docker compose up -d`, se compila con `./mvnw clean package` y se ejecuta el `.jar` con las variables de entorno de producción (`DB_*`, `DDL_AUTO=update`, `JWT_SECRET`, `GEMINI_API_KEY`, `PORT=80`). También se incluye un `Dockerfile` multi-etapa para desplegar como contenedor.
 - **URL pública:** `http://ec2-32-192-242-54.compute-1.amazonaws.com/api/v1`
 - **Evidencia:** la carpeta `AWS/` contiene capturas, un video de las pruebas y la colección de Postman apuntando al servidor.
+
+### Despliegue en Railway
+Además de EC2, el repositorio incluye `railway.json` para desplegar en [Railway](https://railway.com):
+- **Build:** Railway construye la imagen con el `Dockerfile` multi-etapa (Maven + Java 21 para compilar y una imagen JRE liviana con un usuario sin privilegios para ejecutar).
+- **Ejecución:** una réplica, con reinicio automático si la aplicación falla (`ON_FAILURE`, hasta 10 intentos). La app escucha en el puerto que Railway entrega en la variable `PORT`.
+- **Base de datos:** se agrega un servicio PostgreSQL en el mismo proyecto y se enlazan sus datos con variables de referencia: `DB_HOST=${{Postgres.PGHOST}}`, `DB_PORT=${{Postgres.PGPORT}}`, `DB_NAME=${{Postgres.PGDATABASE}}`, `DB_USER=${{Postgres.PGUSER}}` y `DB_PASSWORD=${{Postgres.PGPASSWORD}}`.
+- **Resto de variables:** en la pestaña *Variables* del servicio se cargan `JWT_SECRET`, `GEMINI_API_KEY`, las credenciales SMTP y `CORS_ALLOWED_ORIGINS` con el dominio del frontend (ver [Variables de entorno](#variables-de-entorno)).
+- Al conectar el repositorio de GitHub, cada push a `main` genera un nuevo despliegue automáticamente.
 
 ## Conclusión
 
