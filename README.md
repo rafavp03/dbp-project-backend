@@ -6,13 +6,13 @@
 
 ### Integrantes y participación
 
-| Integrante | Principales aportes | Participación |
+| Integrante | Aportes en el proyecto | Participación |
 |---|---|---|
-| Rafael Antonio Vargas Portocarrero | Catálogo, inventario, reportes y asistente de IA (Spring AI + Gemini, *tools* y auditoría de consultas); despliegue en AWS EC2 y Railway | 100 % |
-| Javier Alonso Bravo Chávez | Empresa y proveedores, categorías y clientes; servicios y repositorios asociados | 100 % |
-| Gabriel Murillo Machicao | Asistente de IA, categorías y apoyo en autenticación; integración con el frontend | 100 % |
-| Indira Shian Yábar Ramos | Usuarios, seguridad (JWT, `JwtService`, `AuthController`) y clientes | 100 % |
-| Héctor Sebastián Choque Dueñas | Órdenes de compra y órdenes de venta con sus detalles | 100 % |
+| Rafael Antonio Vargas Portocarrero | **Backend:** catálogo, inventario, reportes y asistente de IA (Spring AI + Gemini). **Móvil:** la aplicación completa (React Native + Expo), escáner, ubicación y clima. **Despliegue:** AWS EC2, Railway y EAS | 100 % |
+| Javier Alonso Bravo Chávez | **Backend:** empresa, proveedores, categorías y clientes. **Web:** cliente axios e interceptores, autenticación y rutas, layout, catálogo, compras, ventas, dashboard, filtros y exportación CSV | 100 % |
+| Gabriel Murillo Machicao | **Backend:** asistente de IA, categorías y apoyo en autenticación. **Móvil:** integración del asistente | 100 % |
+| Indira Shian Yábar Ramos | **Backend:** usuarios y seguridad (JWT, `JwtService`, `AuthController`). **Web:** renderizado de gráficos del asistente, portada, modo claro/oscuro, rediseño, edición de variantes y ajuste de stock | 100 % |
+| Héctor Sebastián Choque Dueñas | **Backend:** órdenes de compra y órdenes de venta con sus detalles | 100 % |
 
 > Los commits firmados como `Acer` corresponden a **Indira Shian Yábar Ramos** (nombre por defecto en su computadora).
 
