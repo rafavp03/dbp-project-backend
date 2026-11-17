@@ -4,12 +4,28 @@
 
 **Curso:** CS 2031 Desarrollo Basado en Plataforma
 
-**Integrantes:**
-- Gabriel Murillo Machicao
-- Héctor Sebastián Choque Dueñas
-- Javier Bravo Chávez
-- Rafael Vargas Portocarrero
-- Indira Shian Yábar Ramos
+### Integrantes y participación
+
+| Integrante | Principales aportes | Participación |
+|---|---|---|
+| Rafael Antonio Vargas Portocarrero | Catálogo, inventario, reportes y asistente de IA (Spring AI + Gemini, *tools* y auditoría de consultas); despliegue en AWS EC2 y Railway | 100 % |
+| Javier Alonso Bravo Chávez | Empresa y proveedores, categorías y clientes; servicios y repositorios asociados | 100 % |
+| Gabriel Murillo Machicao | Asistente de IA, categorías y apoyo en autenticación; integración con el frontend | 100 % |
+| Indira Shian Yábar Ramos | Usuarios, seguridad (JWT, `JwtService`, `AuthController`) y clientes | 100 % |
+| Héctor Sebastián Choque Dueñas | Órdenes de compra y órdenes de venta con sus detalles | 100 % |
+
+> Los commits firmados como `Acer` corresponden a **Indira Shian Yábar Ramos** (nombre por defecto en su computadora).
+
+**Enlaces del proyecto**
+
+| Componente | URL |
+|---|---|
+| Backend (API, Railway) | <https://gamarrito-backend.up.railway.app/api/v1> |
+| Backend (API, AWS EC2) | <http://ec2-32-192-242-54.compute-1.amazonaws.com/api/v1> |
+| Web (producción) | <https://gamarrito-erp.vercel.app> |
+| Aplicación móvil (build de prueba) | <PEGAR AQUI el enlace de la build en expo.dev> |
+| Repositorio web | <https://github.com/javierbravo-del/dbp-project-frontend-web> |
+| Repositorio móvil | <https://github.com/rafavp03/project-mobile> |
 
 ---
 
