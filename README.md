@@ -62,6 +62,8 @@ Estos negocios operan con márgenes pequeños: una mala compra impacta directame
 | **Compras** | Órdenes a proveedores que suman stock automáticamente. |
 | **Ventas** | Ventas con medio de pago y canal. El cliente es opcional. Descuentan stock y guardan el precio de lista y el costo del momento, para calcular ganancia y descuento reales. |
 | **Reportes** | Resumen del periodo (ventas, ganancia, margen, ticket promedio), ranking de productos, ventas por medio de pago, canal, categoría, día u hora, stock bajo y stock parado con el capital inmovilizado. |
+| **Reposición inteligente** | `GET /api/v1/reports/restock-suggestions?dias=30&cobertura=21` (ADMIN): con el ritmo de venta real de cada talla y color calcula en cuántos días se agota, su urgencia (AGOTADO, CRITICO, PRONTO, PLANIFICAR), cuántas unidades comprar para cubrir `cobertura` días más el stock mínimo, el costo estimado y el último proveedor. Mientras más historial de ventas tiene el negocio, más precisa es la sugerencia. El asistente de IA también la usa como herramienta. |
+| **Analítica con IA** | `POST /api/v1/assistant/chart` (ADMIN) recibe un pedido en lenguaje natural (*"ventas por canal de este mes"*) y devuelve un gráfico listo para dibujar. La IA **solo traduce el pedido a una receta** (`ChartSpecDTO`: fuente de datos, tipo de gráfico, agrupación, métrica y fechas, todo con enums); las cifras las calcula `ChartService` con los reportes del negocio, así que la IA no puede inventar números ni ver datos de otra empresa. `POST /api/v1/reports/chart` recalcula un gráfico a partir de su receta sin usar IA, para los gráficos guardados y los predefinidos. Comparte el límite diario del asistente. |
 | **Asistente de IA** | `POST /api/v1/assistant`: responde preguntas como *"¿Qué me conviene reponer?"* usando solo los reportes del negocio del usuario. Tiene límite diario e historial. |
 | **Notificaciones por correo** | Bienvenida al registrarse, alerta de stock bajo (por venta o salida manual), confirmación de compras, aviso al dueño de ajustes de inventario y cambios de precio, constancia de compra al cliente y aviso al empleado cuya cuenta se elimina. |
 
@@ -164,8 +166,8 @@ la creación de una empresa nueva.
 | `/purchase-orders` | `POST`, `GET` (filtros `desde`/`hasta`), `GET /{id}` |
 | `/sales-orders` | `POST`, `GET` (filtros `desde`/`hasta`), `GET /{id}` |
 | `/stock-movements` | `POST /inbound` · `/outbound` · `/returns` · `/adjustments`, `GET /variants/{id}`, `GET /low-stock` |
-| `/reports` | `GET /summary` · `/top-products` · `/grouped-sales` · `/low-stock` · `/stale-stock` |
-| `/assistant` | `POST`, `GET /history` |
+| `/reports` | `GET /summary` · `/top-products` · `/grouped-sales` · `/low-stock` · `/stale-stock` · `/restock-suggestions`, `POST /chart` |
+| `/assistant` | `POST`, `POST /chart`, `GET /history` |
 
 El detalle de cada endpoint, con ejemplos de body y respuesta, está en
 `postman_collection.json`.
@@ -289,12 +291,13 @@ Los listeners usan `@TransactionalEventListener(phase = AFTER_COMMIT)`, así que
   5. **si algún test falla**, sube la carpeta `target/surefire-reports/` como artefacto `reportes-tests` (se conserva 7 días), para revisar el detalle del error desde la ejecución sin repetirla en local.
 
   Si se hace un push nuevo a la misma rama mientras otra ejecución sigue en curso, la anterior se cancela (`concurrency`) y el workflow tiene un límite de 20 minutos. Si algo falla, el PR queda marcado en rojo antes de hacer merge. El badge al inicio de este README muestra el estado de la última ejecución en `main`.
-- **Tests:** 23 en total.
+- **Tests:** 24 en total.
   - `ProductVariantModelTest`: reglas de stock de la entidad.
   - `AssistantServiceTest`: cuota diaria, bloqueo pesimista y falta de clave de IA (Mockito).
   - `ProductMapperTest`, `SalesOrderMapperTest`: los mappers aplanan relaciones, mapean los detalles y el PATCH ignora los `null`.
   - `ProductServiceTest`: un cambio de precio publica `ProductPriceChangedEvent` y un mismo precio con otra escala (25 vs 25.00) no.
   - `StockMovementServiceTest`: un ajuste publica `StockMovementRegisteredEvent` con la diferencia correcta.
+  - `ReportServiceRestockTest`: la reposición sugiere la talla que se agota (con su cantidad y urgencia) y no la que tiene stock de sobra.
   - `PriceChangeListenerTest`, `PageResponseDTOTest`: cálculo del margen y forma de la respuesta paginada.
   - `contextLoads`: levanta la aplicación completa contra PostgreSQL.
 

@@ -5,9 +5,11 @@ import dbp.projectbackend.enums.SalesGrouping;
 import dbp.projectbackend.enums.RankingCriterion;
 import dbp.projectbackend.enums.OrderStatus;
 import dbp.projectbackend.exceptions.InvalidOperationException;
+import dbp.projectbackend.models.PurchaseOrderLineModel;
 import dbp.projectbackend.models.SalesOrderLineModel;
 import dbp.projectbackend.models.ProductModel;
 import dbp.projectbackend.models.ProductVariantModel;
+import dbp.projectbackend.repositories.PurchaseOrderRepository;
 import dbp.projectbackend.repositories.SalesOrderLineRepository;
 import dbp.projectbackend.repositories.ProductVariantRepository;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,7 @@ public class ReportService {
 
     private final SalesOrderLineRepository detalleRepository;
     private final ProductVariantRepository varianteRepository;
+    private final PurchaseOrderRepository compraRepository;
 
     public SalesSummaryDTO summary(Long empresaId, LocalDate desde, LocalDate hasta) {
         List<SalesOrderLineModel> lineas = periodLines(empresaId, desde, hasta);
@@ -92,6 +95,20 @@ public class ReportService {
         };
     }
 
+    /** Ventas de cada dia del periodo (grupo = fecha AAAA-MM-DD), incluidos los dias sin ventas. */
+    public List<GroupedSalesDTO> salesByDay(Long empresaId, LocalDate desde, LocalDate hasta) {
+        List<SalesOrderLineModel> lineas = periodLines(empresaId, desde, hasta);
+        BigDecimal totalGeneral = sum(lineas, SalesOrderLineModel::getSubtotal);
+        Map<LocalDate, List<SalesOrderLineModel>> porDia = lineas.stream()
+                .collect(Collectors.groupingBy(d -> d.getOrdenVenta().getFechaEmision().toLocalDate()));
+
+        List<GroupedSalesDTO> dias = new ArrayList<>();
+        for (LocalDate dia = desde; !dia.isAfter(hasta); dia = dia.plusDays(1)) {
+            dias.add(toGroup(dia.toString(), porDia.getOrDefault(dia, List.of()), totalGeneral));
+        }
+        return dias;
+    }
+
     public List<LowStockDTO> lowStock(Long empresaId) {
         return varianteRepository.findStockBajo(empresaId).stream()
                 .filter(v -> Boolean.TRUE.equals(v.getProducto().getActivo()))
@@ -135,6 +152,128 @@ public class ReportService {
                 .filter(p -> p.diasSinVender() >= dias)
                 .sorted(Comparator.comparing(StaleProductDTO::capitalInmovilizado).reversed())
                 .toList();
+    }
+
+    /**
+     * Reposicion inteligente: para cada talla y color activa calcula su ritmo de venta en los ultimos
+     * {@code dias}, en cuantos dias se agota y cuanto comprar para cubrir {@code cobertura} dias de venta
+     * mas el stock minimo. Tambien propone el ultimo proveedor y el ultimo costo de compra.
+     */
+    public List<RestockSuggestionDTO> restockSuggestions(Long empresaId, int dias, int cobertura) {
+        if (dias < 7 || dias > 180) {
+            throw new InvalidOperationException("El periodo de analisis debe estar entre 7 y 180 dias");
+        }
+        if (cobertura < 1 || cobertura > 120) {
+            throw new InvalidOperationException("La cobertura debe estar entre 1 y 120 dias");
+        }
+
+        LocalDateTime ahora = LocalDateTime.now();
+        Map<Long, Integer> unidadesPorVariante = new HashMap<>();
+        for (SalesOrderLineModel linea : detalleRepository.findVendidosEnPeriodo(
+                empresaId, OrderStatus.COMPLETADA, ahora.minusDays(dias), ahora.plusSeconds(1))) {
+            unidadesPorVariante.merge(linea.getVariante().getId(), linea.getCantidad(), Integer::sum);
+        }
+
+        List<RestockCalculation> calculos = new ArrayList<>();
+        for (ProductVariantModel variante : varianteRepository.findByProductoEmpresaId(empresaId)) {
+            if (!Boolean.TRUE.equals(variante.getActivo()) || !Boolean.TRUE.equals(variante.getProducto().getActivo())) {
+                continue;
+            }
+            int unidades = unidadesPorVariante.getOrDefault(variante.getId(), 0);
+            int stock = variante.getStock();
+            int stockMinimo = variante.getStockMinimo();
+
+            // Un producto registrado hace menos dias que el periodo se mide solo sobre los dias que existe.
+            LocalDateTime registro = variante.getProducto().getFechaRegistro();
+            long diasConHistoria = registro == null ? dias : ChronoUnit.DAYS.between(registro, ahora) + 1;
+            long diasEfectivos = Math.max(1, Math.min(dias, diasConHistoria));
+            double ventaDiaria = (double) unidades / diasEfectivos;
+
+            Integer diasRestantes = ventaDiaria > 0 ? (int) Math.floor(stock / ventaDiaria) : null;
+            int objetivo = (int) Math.ceil(ventaDiaria * cobertura) + stockMinimo;
+            int cantidadSugerida = objetivo - stock;
+
+            boolean seAgotaPronto = diasRestantes != null && diasRestantes <= cobertura;
+            boolean bajoMinimo = stock < stockMinimo;
+            if (cantidadSugerida > 0 && (seAgotaPronto || bajoMinimo)) {
+                calculos.add(new RestockCalculation(variante, unidades, ventaDiaria, diasRestantes, cantidadSugerida));
+            }
+        }
+        if (calculos.isEmpty()) {
+            return List.of();
+        }
+
+        // La consulta viene de la compra mas reciente a la mas antigua: la primera linea de cada variante es la ultima compra.
+        Map<Long, PurchaseOrderLineModel> ultimaCompra = new HashMap<>();
+        List<Long> varianteIds = calculos.stream().map(c -> c.variante().getId()).toList();
+        for (PurchaseOrderLineModel linea : compraRepository.findComprasDeVariantes(empresaId, OrderStatus.ANULADA, varianteIds)) {
+            ultimaCompra.putIfAbsent(linea.getVariante().getId(), linea);
+        }
+
+        LocalDate hoy = ahora.toLocalDate();
+        return calculos.stream()
+                .map(c -> toRestockSuggestion(c, ultimaCompra.get(c.variante().getId()), hoy))
+                .sorted(Comparator.comparingInt((RestockSuggestionDTO s) -> urgencyOrder(s.urgencia()))
+                        .thenComparingInt(s -> s.diasRestantes() == null ? Integer.MAX_VALUE : s.diasRestantes())
+                        .thenComparing(Comparator.comparing(RestockSuggestionDTO::ventaEnRiesgoDiaria).reversed()))
+                .toList();
+    }
+
+    private record RestockCalculation(ProductVariantModel variante, int unidades, double ventaDiaria,
+                                      Integer diasRestantes, int cantidadSugerida) {}
+
+    private RestockSuggestionDTO toRestockSuggestion(RestockCalculation c, PurchaseOrderLineModel ultimaCompra, LocalDate hoy) {
+        ProductVariantModel variante = c.variante();
+        ProductModel producto = variante.getProducto();
+
+        BigDecimal costoUnitario = ultimaCompra != null
+                ? ultimaCompra.getPrecioUnitario()
+                : Optional.ofNullable(producto.getPrecioCompra()).orElse(BigDecimal.ZERO);
+        BigDecimal ventaDiaria = BigDecimal.valueOf(c.ventaDiaria()).setScale(2, RoundingMode.HALF_UP);
+
+        String urgencia;
+        if (c.diasRestantes() == null) {
+            urgencia = "PLANIFICAR";
+        } else if (variante.getStock() <= 0) {
+            urgencia = "AGOTADO";
+        } else if (c.diasRestantes() <= 7) {
+            urgencia = "CRITICO";
+        } else if (c.diasRestantes() <= 14) {
+            urgencia = "PRONTO";
+        } else {
+            urgencia = "PLANIFICAR";
+        }
+
+        return new RestockSuggestionDTO(
+                variante.getId(),
+                producto.getId(),
+                producto.getCodigo(),
+                producto.getNombre(),
+                variante.getTalla(),
+                variante.getColor(),
+                variante.getStock(),
+                variante.getStockMinimo(),
+                c.unidades(),
+                ventaDiaria,
+                c.diasRestantes(),
+                c.diasRestantes() != null ? hoy.plusDays(c.diasRestantes()) : null,
+                urgencia,
+                c.cantidadSugerida(),
+                costoUnitario,
+                costoUnitario.multiply(BigDecimal.valueOf(c.cantidadSugerida())),
+                producto.getPrecioVenta().multiply(ventaDiaria).setScale(2, RoundingMode.HALF_UP),
+                ultimaCompra != null ? ultimaCompra.getOrdenCompra().getProveedor().getId() : null,
+                ultimaCompra != null ? ultimaCompra.getOrdenCompra().getProveedor().getRazonSocial() : null
+        );
+    }
+
+    private int urgencyOrder(String urgencia) {
+        return switch (urgencia) {
+            case "AGOTADO" -> 0;
+            case "CRITICO" -> 1;
+            case "PRONTO" -> 2;
+            default -> 3;
+        };
     }
 
     private List<SalesOrderLineModel> periodLines(Long empresaId, LocalDate desde, LocalDate hasta) {

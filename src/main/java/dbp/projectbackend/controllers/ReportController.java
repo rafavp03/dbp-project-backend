@@ -1,10 +1,14 @@
 package dbp.projectbackend.controllers;
 
+import dbp.projectbackend.dtos.request.ChartSpecDTO;
+import dbp.projectbackend.dtos.response.ChartResponseDTO;
 import dbp.projectbackend.dtos.response.report.*;
 import dbp.projectbackend.enums.SalesGrouping;
 import dbp.projectbackend.enums.RankingCriterion;
 import dbp.projectbackend.models.UserModel;
+import dbp.projectbackend.services.ChartService;
 import dbp.projectbackend.services.ReportService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +26,7 @@ import java.util.List;
 public class ReportController {
 
     private final ReportService service;
+    private final ChartService chartService;
 
     @GetMapping("/summary")
     public ResponseEntity<SalesSummaryDTO> summary(
@@ -63,6 +68,21 @@ public class ReportController {
             @AuthenticationPrincipal UserModel user,
             @RequestParam(defaultValue = "60") int dias) {
         return ResponseEntity.ok(service.staleStock(enterpriseId(user), dias));
+    }
+
+    @GetMapping("/restock-suggestions")
+    public ResponseEntity<List<RestockSuggestionDTO>> restockSuggestions(
+            @AuthenticationPrincipal UserModel user,
+            @RequestParam(defaultValue = "30") int dias,
+            @RequestParam(defaultValue = "21") int cobertura) {
+        return ResponseEntity.ok(service.restockSuggestions(enterpriseId(user), dias, cobertura));
+    }
+
+    /** Calcula un grafico a partir de su receta. No usa IA: sirve para graficos guardados y predefinidos. */
+    @PostMapping("/chart")
+    public ResponseEntity<ChartResponseDTO> chart(@AuthenticationPrincipal UserModel user,
+                                                  @Valid @RequestBody ChartSpecDTO spec) {
+        return ResponseEntity.ok(chartService.build(enterpriseId(user), spec));
     }
 
     private Long enterpriseId(UserModel user) {

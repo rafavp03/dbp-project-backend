@@ -3,9 +3,11 @@ package dbp.projectbackend.controllers;
 import dbp.projectbackend.dtos.request.QuestionDTO;
 import dbp.projectbackend.dtos.response.AiQueryResponseDTO;
 import dbp.projectbackend.dtos.response.AssistantAnswerResponseDTO;
+import dbp.projectbackend.dtos.response.ChartResponseDTO;
 import dbp.projectbackend.dtos.response.PageResponseDTO;
 import dbp.projectbackend.models.UserModel;
 import dbp.projectbackend.services.AssistantService;
+import dbp.projectbackend.services.ChartAssistantService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -23,11 +25,20 @@ import org.springframework.web.bind.annotation.*;
 public class AssistantController {
 
     private final AssistantService service;
+    private final ChartAssistantService chartAssistantService;
 
     @PostMapping
     public ResponseEntity<AssistantAnswerResponseDTO> ask(@AuthenticationPrincipal UserModel user,
                                                            @Valid @RequestBody QuestionDTO dto) {
         return ResponseEntity.ok(service.ask(user, dto.pregunta()));
+    }
+
+    /** Grafico pedido en lenguaje natural. Solo ADMIN porque muestra ventas y ganancias. */
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/chart")
+    public ResponseEntity<ChartResponseDTO> chart(@AuthenticationPrincipal UserModel user,
+                                                  @Valid @RequestBody QuestionDTO dto) {
+        return ResponseEntity.ok(chartAssistantService.ask(user, dto.pregunta()));
     }
 
     @GetMapping("/history")

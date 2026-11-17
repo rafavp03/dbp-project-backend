@@ -59,6 +59,16 @@ public class AdminTools {
         return reporteService.staleStock(empresaId, dias == null ? 60 : dias).stream().limit(MAX_ROWS).toList();
     }
 
+    @Tool(description = "Reposicion inteligente: que tallas y colores conviene comprar ya, segun el ritmo de venta real. "
+            + "Para cada una indica stock, venta diaria, en cuantos dias se agota, urgencia (AGOTADO, CRITICO, PRONTO, "
+            + "PLANIFICAR), cuantas unidades comprar, costo estimado en soles y el ultimo proveedor. "
+            + "Usala cuando pregunten que reponer, cuanto comprar o a que proveedor pedir.")
+    public List<RestockSuggestionDTO> restockSuggestions(
+            @ToolParam(description = "Para cuantos dias de venta quiere abastecerse. Por defecto 21", required = false) Integer cobertura) {
+        int dias = cobertura == null ? 21 : Math.min(Math.max(cobertura, 1), 120);
+        return reporteService.restockSuggestions(empresaId, 30, dias).stream().limit(MAX_ROWS).toList();
+    }
+
     private LocalDate parseDate(String valor, String nombre) {
         try {
             return LocalDate.parse(valor.strip());
