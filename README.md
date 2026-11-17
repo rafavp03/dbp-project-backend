@@ -23,7 +23,7 @@
 | Backend (API, Railway) | <https://gamarrito-backend.up.railway.app/api/v1> |
 | Backend (API, AWS EC2) | <http://ec2-32-192-242-54.compute-1.amazonaws.com/api/v1> |
 | Web (producción) | <https://gamarrito-erp.vercel.app> |
-| Aplicación móvil (build de prueba) | <PEGAR AQUI el enlace de la build en expo.dev> |
+| Aplicación móvil (build de prueba) | <https://expo.dev/accounts/gabrielmurilloo/projects/gamarrito-mobile/builds/2d1cd75b-5af0-4aee-8c8b-c3621efadca2> |
 | Repositorio web | <https://github.com/javierbravo-del/dbp-project-frontend-web> |
 | Repositorio móvil | <https://github.com/rafavp03/project-mobile> |
 
