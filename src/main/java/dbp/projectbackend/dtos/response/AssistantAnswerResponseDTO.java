@@ -5,5 +5,6 @@ import java.time.LocalDateTime;
 public record AssistantAnswerResponseDTO(
         String respuesta,
         int consultasRestantesHoy,
-        LocalDateTime fecha
+        LocalDateTime fecha,
+        VisualDTO visual
 ) {}
