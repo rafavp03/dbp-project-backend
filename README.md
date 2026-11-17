@@ -4,12 +4,28 @@
 
 **Curso:** CS 2031 Desarrollo Basado en Plataforma
 
-**Integrantes:**
-- Gabriel Murillo Machicao
-- Héctor Sebastián Choque Dueñas
-- Javier Bravo Chávez
-- Rafael Vargas Portocarrero
-- Indira Shian Yábar Ramos
+### Integrantes y participación
+
+| Integrante | Aportes en el proyecto | Participación |
+|---|---|---|
+| Rafael Antonio Vargas Portocarrero | **Backend:** catálogo, inventario, reportes y asistente de IA (Spring AI + Gemini). **Móvil:** la aplicación completa (React Native + Expo), escáner, ubicación y clima. **Despliegue:** AWS EC2, Railway y EAS | 100 % |
+| Javier Alonso Bravo Chávez | **Backend:** empresa, proveedores, categorías y clientes. **Web:** cliente axios e interceptores, autenticación y rutas, layout, catálogo, compras, ventas, dashboard, filtros y exportación CSV | 100 % |
+| Gabriel Murillo Machicao | **Backend:** asistente de IA, categorías y apoyo en autenticación. **Móvil:** integración del asistente | 100 % |
+| Indira Shian Yábar Ramos | **Backend:** usuarios y seguridad (JWT, `JwtService`, `AuthController`). **Web:** renderizado de gráficos del asistente, portada, modo claro/oscuro, rediseño, edición de variantes y ajuste de stock | 100 % |
+| Héctor Sebastián Choque Dueñas | **Backend:** órdenes de compra y órdenes de venta con sus detalles | 100 % |
+
+> Los commits firmados como `Acer` corresponden a **Indira Shian Yábar Ramos** (nombre por defecto en su computadora).
+
+**Enlaces del proyecto**
+
+| Componente | URL |
+|---|---|
+| Backend (API, Railway) | <https://gamarrito-backend.up.railway.app/api/v1> |
+| Backend (API, AWS EC2) | <http://ec2-32-192-242-54.compute-1.amazonaws.com/api/v1> |
+| Web (producción) | <https://gamarrito-erp.vercel.app> |
+| Aplicación móvil (build de prueba) | <PEGAR AQUI el enlace de la build en expo.dev> |
+| Repositorio web | <https://github.com/javierbravo-del/dbp-project-frontend-web> |
+| Repositorio móvil | <https://github.com/rafavp03/project-mobile> |
 
 ---
 
