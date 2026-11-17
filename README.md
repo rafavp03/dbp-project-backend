@@ -1,4 +1,4 @@
-# Tienda Clara: ERP con asistente de IA para minoristas de Gamarra
+# Gamarrito: ERP con asistente de IA para minoristas de Gamarra
 
 [![CI](https://github.com/rafavp03/dbp-project-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/rafavp03/dbp-project-backend/actions/workflows/ci.yml)
 
